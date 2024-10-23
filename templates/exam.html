@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam</title>
+</head>
+<body>
+    <h2>Question {{ index + 1 }} of {{ total }}</h2>
+    <p>{{ question['question'] }}</p>
+    <form action="/submit_answer" method="POST">
+        {% for option in options %}
+        <label>
+            <input type="radio" name="answer" value="{{ option }}">
+            {{ option }}
+        </label><br>
+        {% endfor %}
+        <input type="hidden" name="question_index" value="{{ index }}">
+        <br>
+        <button type="submit">Submit Answer</button>
+    </form>    
+    <br>
+    <a href="/exam?q={{ index - 1 }}">Previous Question</a> |
+    <a href="/exam?q={{ index + 1 }}">Next Question</a>
+</body>
+</html>

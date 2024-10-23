@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Your Answers</title>
+</head>
+<body>
+    <h2>Review Your Answers</h2>
+    <form action="/submit_exam" method="POST">
+        <ul>
+        {% for question in questions %}
+            <li>
+                <strong>{{ question['question'] }}</strong><br>
+                Your answer: {{ answers[loop.index0] or 'No answer' }}<br>
+                Value: {{ question['value'] }} points<br>
+                
+                <!-- Link to go back and modify the answer -->
+                <a href="{{ url_for('exam', q=loop.index0) }}">Change Answer</a>
+            </li><br>
+        {% endfor %}
+        </ul>
+        <button type="submit">Submit Exam</button>
+    </form>
+</body>
+</html>

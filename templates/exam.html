@@ -20,6 +20,8 @@
             border-radius: 5px;
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            margin-bottom: 20px;
         }
         .options {
             margin: 15px 0;
@@ -35,24 +37,41 @@
         input[type="radio"] {
             margin-right: 10px;
         }
-        button {
+        button, .nav-button {
             padding: 10px 15px;
             border: none;
-            background-color: #5cb85c;
-            color: white;
             border-radius: 5px;
             cursor: pointer;
+            margin: 5px 0;
+            display: inline-block;
+            background-color: #5cb85c;
+            color: white;
         }
-        button:hover {
+        button:hover, .nav-button:hover {
             background-color: #4cae4c;
         }
-        a {
+        .review-button {
+            background-color: #90EE90;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            color: white;
             text-decoration: none;
-            color: #007bff;
-            margin: 0 5px;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            cursor: pointer;
+            display: inline-block;
         }
-        a:hover {
-            text-decoration: underline;
+        .review-button:hover {
+            background-color: #0056b3;
+        }
+        .nav-button {
+            background-color: #007bff;
+            margin-left: 10px;
+        }
+        .nav-button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -60,23 +79,52 @@
     <div class="question-container">
         <h2>Question {{ index + 1 }} of {{ total }}</h2>
         <p>{{ question['question'] }}</p>
-        <form action="/submit_answer" method="POST">
+        <form id="question-form" action="/submit_answer" method="POST">
             <div class="options">
                 {% for option in options %}
                 <label>
-                    <input type="radio" name="answer" value="{{ option }}">
+                    <input type="radio" name="answer" value="{{ option }}" {% if option == selected_answer %} checked {% endif %}>
                     {{ option }}
                 </label>
                 {% endfor %}
             </div>
             <input type="hidden" name="question_index" value="{{ index }}">
-            <button type="submit">Submit Answer</button>
-        </form>    
-        <br>
+        </form>
+        
         <div>
-            <a href="/exam?q={{ index - 1 }}">Previous Question</a> |
-            <a href="/exam?q={{ index + 1 }}">Next Question</a>
+            {% if index > 0 %}
+                <button class="nav-button" onclick="navigate(-1)">Previous Question</button>
+            {% endif %}
+            {% if index < total - 1 %}
+                <button class="nav-button" onclick="navigate(1)">Next Question</button>
+            {% endif %}
         </div>
+        <button class="review-button" onclick="window.location.href='{{ url_for('review') }}'">Review Exam</button>
     </div>
+
+    <script>
+        async function navigate(direction) {
+            // Get the form data
+            let form = document.getElementById('question-form');
+            let formData = new FormData(form);
+    
+            // Send the answer to the server using fetch (assuming POST is supported at /submit_answer)
+            try {
+                await fetch('/submit_answer', {
+                    method: 'POST',
+                    body: formData
+                });
+    
+                // Once the answer is submitted, navigate to the next question
+                let currentIndex = {{ index }};
+                let nextIndex = currentIndex + direction;
+                window.location.href = "/exam?q=" + nextIndex;
+            } catch (error) {
+                console.error("Error submitting answer:", error);
+            }
+        }
+    </script>
+    
+    
 </body>
 </html>

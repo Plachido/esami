@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Test Code</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+        h2 {
+            color: #333;
+            margin-top: 60px; /* Added margin to keep space for the logout button */
+        }
+        .code-container {
+            background: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .code-input {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 15px;
+        }
+        .code-input label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .code-input input {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            width: 100%;
+        }
+        .submit-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            font-size: 1em;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .submit-button:hover {
+            background-color: #218838;
+        }
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: white;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+    <h2>Enter Your Test Code</h2>
+    <div class="code-container">
+        <div class="code-input">
+            <label for="testCode">Test Code:</label>
+            <input type="text" id="testCode" placeholder="Enter your exam code" required>
+        </div>
+        <button class="submit-button" onclick="submitTestCode()">Submit</button>
+    </div>
+    <script>
+        function submitTestCode() {
+            const testCode = document.getElementById('testCode').value;
+            if (testCode) {
+                console.log('Test code entered:', testCode);
+                // Implement the logic to verify the test code and redirect to the test page
+                // For example:
+                // window.location.href = 'test_page.html?testCode=' + testCode;
+            } else {
+                alert('Please enter a test code.');
+            }
+        }
+    </script>
+</body>
+</html>

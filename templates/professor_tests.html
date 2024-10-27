@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Tests</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            position: relative;
+        }
+        h2 {
+            color: #333;
+            margin-top: 60px; /* Added margin to keep space for the logout button */
+        }
+        .tests-container {
+            background: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .test-item {
+            background: #eaeaea;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-item h3 {
+            margin: 0;
+            font-size: 1.2em;
+            color: #333;
+        }
+        .create-test-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .create-test-button:hover {
+            background-color: #0056b3;
+        }
+        .logout-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #dc3545;
+            color: white;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+    <h2>Your Created Tests</h2>
+    <div class="tests-container">
+        {% if tests %}
+            {% for test in tests %}
+            <div class="test-item">
+                <h3>{{ test['nome'] }}</h3>
+                <span>Test ID: {{ test['id'] }}</span>
+                <!-- Add the Start Test button here -->
+                <button class="start-test-button" onclick="startTest('{{ test['id'] }}')">Start Test</button>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No tests created yet.</p>
+        {% endif %}
+    </div>
+    <div>
+        <a href="{{ url_for('create_test') }}" class="create-test-button">Create Test</a> <!-- Updated here -->
+    </div>
+    <script>
+        function startTest(testId) {
+            alert('Starting test with ID: ' + testId); // Alert to check if testId is correct
+            console.log('Starting test with ID:', testId);
+            // Redirecting to a new page for the test (modify as needed)
+            // window.location.href = 'test_page.html?testId=' + testId; 
+        }
+    </script>
+</body>
+</html>

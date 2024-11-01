@@ -69,6 +69,8 @@ CREATE TABLE opzione (
 CREATE TABLE codice (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     data_generazione DATE NOT NULL,
+    exam_duration int not null,
+    validity_time int not null,
     test_id INT UNSIGNED NOT NULL,
     FOREIGN KEY (test_id) REFERENCES test(id)
 );
@@ -95,3 +97,5 @@ CREATE TABLE risposta (
     FOREIGN KEY (domanda_id) REFERENCES domanda(id),
     FOREIGN KEY (opzione_id) REFERENCES opzione(id)
 );
+
+

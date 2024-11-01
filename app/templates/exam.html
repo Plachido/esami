@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        .question-container {
+            background: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .options {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #eaeaea;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+        button, .nav-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+            display: inline-block;
+            background-color: #5cb85c;
+            color: white;
+        }
+        button:hover, .nav-button:hover {
+            background-color: #4cae4c;
+        }
+        .review-button {
+            background-color: #90EE90;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .review-button:hover {
+            background-color: #0056b3;
+        }
+        .nav-button {
+            background-color: #007bff;
+            margin-left: 10px;
+        }
+        .nav-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <h2>Question {{ index + 1 }} of {{ total }}</h2>
+        <p>{{ question['question'] }}</p>
+        <form id="question-form">
+            <div class="options">
+                {% for option in question['options'] %}
+                <label>
+                    <input type="radio" name="answer" value="{{ option }}" {% if option == selected_answer %} checked {% endif %}>
+                    {{ option }}
+                </label>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="question_index" value="{{ index }}">
+        </form>
+        
+        <div>
+            {% if index > 0 %}
+                <button class="nav-button" onclick="navigate(-1)">Previous Question</button>
+            {% endif %}
+            {% if index < total - 1 %}
+                <button class="nav-button" onclick="navigate(1)">Next Question</button>
+            {% endif %}
+        </div>
+        <button class="review-button" onclick="reviewExam(event)">Review Exam</button>
+    </div>
+
+    <script>
+        async function submitAnswer() {
+            // Get the form data
+            let form = document.getElementById('question-form');
+            let formData = new FormData(form);
+
+            // Send the answer to the server and wait for the response
+            return await fetch('/student/submit_answer', {
+                method: 'POST',
+                body: formData
+            });
+        }
+
+        async function reviewExam(event) {
+            event.preventDefault(); // Prevent the default action
+            const response = await submitAnswer(); // Submit the answer first
+
+            if (response.ok) {
+                // Navigate to the review page if submission is successful
+                window.location.href = '{{ url_for('student.review') }}';
+            } else {
+                console.error("Failed to submit answer:", response);
+            }
+        }
+
+        async function navigate(direction) {
+            // Get the form data
+            let form = document.getElementById('question-form');
+            let formData = new FormData(form);
+            formData.append(direction === 1 ? 'next_index' : 'prev_index', {{ index }} + direction);
+
+            // Send the answer to the server and wait for the response
+            const response = await fetch('/student/submit_answer', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.redirected) {
+                // If the server redirects, navigate to the new location
+                window.location.href = response.url;
+            } else {
+                // If no redirection occurs, handle it (optional)
+                console.error("Failed to redirect:", response);
+            }
+        }
+    </script>
+</body>
+</html>

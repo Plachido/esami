@@ -6,7 +6,7 @@
     <title>Enter Test Code</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Your existing styles */
+        /* Styles for the page */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -17,6 +17,11 @@
         h2 {
             color: #333;
             margin-top: 60px;
+        }
+        .message {
+            color: green;
+            font-weight: bold;
+            margin-bottom: 20px;
         }
         .code-container {
             background: #fff;
@@ -74,8 +79,14 @@
     </style>
 </head>
 <body>
-    <a href="{{ url_for('logout') }}" class="logout-button">Logout</a>
+    <a href="{{ url_for('auth.logout') }}" class="logout-button">Logout</a>
     <h2>Enter Your Test Code</h2>
+
+    <!-- Display success message if provided -->
+    {% if message %}
+        <div class="message">{{ message }}</div>
+    {% endif %}
+
     <div class="code-container">
         <form id="testCodeForm" onsubmit="submitTestCode(event)">
             <div class="code-input">
@@ -92,7 +103,7 @@
             const testCode = document.getElementById('testCode').value;
             if (testCode) {
                 try {
-                    const response = await fetch('/enter_test_code', {
+                    const response = await fetch('/student/enter_test_code', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -102,7 +113,7 @@
 
                     if (response.ok) {
                         // Redirect to the exam page or handle success
-                        window.location.href = '/exam';
+                        window.location.href = '/student/exam';
                     } else {
                         const errorText = await response.text();
                         alert(`Error: ${errorText}`);

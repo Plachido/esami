@@ -80,7 +80,7 @@
 
     <!-- Button to create a new exam -->
     <div class="text-center mt-4">
-        <a href="/create_test" class="btn btn-success">Create New Exam</a>
+        <a href="create_test" class="btn btn-success">Create New Exam</a>
     </div>
 </div>
 
@@ -112,11 +112,11 @@
     function setTestId(testId) {
         document.getElementById("test_id").value = testId;
         // Set the action for the form dynamically
-        document.getElementById("examForm").action = `/start_exam_session/${testId}`;
+        document.getElementById("examForm").action = `/professor/start_exam_session/${testId}`;
     }
     
     function stopExamSession(testId) {
-        fetch(`/stop_exam_session/${testId}`, { method: 'POST' })
+        fetch(`/professor/stop_exam_session/${testId}`, { method: 'POST' })
             .then(response => {
                 if (response.ok) {
                     alert("Exam session stopped.");

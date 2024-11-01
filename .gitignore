@@ -1,3 +1,4 @@
 .professore/
 grades.csv
 users.txt
+*.pyc

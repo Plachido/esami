@@ -1,7 +1,9 @@
+
 import csv
 import random
 import mysql.connector
-from flask import Flask, render_template, request, redirect, session, url_for, flash
+from flask import Flask, render_template, request, redirect, session, url_for, flash, jsonify
+import datetime  # Import datetime for handling dates
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Use a strong secret key in production
@@ -61,10 +63,42 @@ def logout():
     return redirect(url_for('index'))
 
 # Route for student to enter a test code
-@app.route('/enter_test_code')
+@app.route('/enter_test_code', methods=['GET', 'POST'])
 def enter_test_code():
+    # Check if the user is logged in and is an 'alunno'
     if 'username' not in session or session['user_type'] != 'alunno':
         return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        # Retrieve the test code from the POST request
+        data = request.get_json()
+        test_code = data.get('testCode')
+        
+        if not test_code:
+            return "Test code is required", 400
+
+        # Connect to the database and verify the test code
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Check if the test code exists in the database
+            cursor.execute("SELECT * FROM codice WHERE id = %s", (test_code,))
+            code_entry = cursor.fetchone()
+            
+            if code_entry:
+                # Optionally, set up session variables or additional checks here
+                return jsonify({"message": "Test code accepted."})
+            else:
+                return "Invalid test code.", 400
+        except Exception as e:
+            print(f"Error checking test code: {e}")
+            return "An error occurred.", 500
+        finally:
+            cursor.close()
+            conn.close()
+
+    # If the request method is GET, render the test code entry page
     return render_template('enter_test_code.html')
 
 # Route to load the test based on the entered test code
@@ -101,7 +135,6 @@ def start_test():
         return redirect(url_for('enter_test_code'))
 
 
-# Route for professor to view their created tests
 @app.route('/professor_tests')
 def professor_tests():
     if 'username' not in session or session['user_type'] != 'professore':
@@ -109,22 +142,50 @@ def professor_tests():
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+
     username = session['username']
-
-    # Retrieve all tests created by this professor
-    cursor.execute("SELECT id, nome FROM test WHERE professore_username = %s", (username,))
+    cursor.execute("SELECT * FROM test WHERE professore_username = %s", (username,))
     tests = cursor.fetchall()
-    
+
+    active_codes = get_active_exam_session(cursor)
+    test_session_map = {}
+    current_time = datetime.datetime.now()
+
+    for code in active_codes:
+        test_id = code['test_id']
+        start_time = code['data_generazione']
+        exam_duration = code['exam_duration']
+        expiry_time = start_time + datetime.timedelta(minutes=exam_duration)
+        remaining_time = (expiry_time - current_time).total_seconds()
+
+        if test_id not in test_session_map:
+            test_session_map[test_id] = []
+
+        test_session_map[test_id].append({
+            'code_id': code['id'],
+            'remaining_time': remaining_time
+        })
+
     conn.close()
-    return render_template('professor_tests.html', tests=tests)
+    return render_template('professor_tests.html', tests=tests, test_session_map=test_session_map)
 
-def get_questions(form_result): #ImmutableMultiDict
-    questions = []
-    while True:
-        questio
+def get_active_exam_session(cursor):
+    cursor.execute("SELECT * FROM codice")
+    codes = cursor.fetchall()
+    current_time = datetime.datetime.now()
+    code_list = []
+
+    for code in codes:
+        start_time = code['data_generazione']
+        exam_duration = code['exam_duration']
         
+        # Calculate expiry time
+        expiry_time = start_time + datetime.timedelta(minutes=exam_duration)
+        
+        if current_time < expiry_time:  # Exam session still active
+            code_list.append(code)
 
-# Route for professor to create a new test
+    return code_list
 @app.route('/create_test', methods=['GET', 'POST'])
 def create_test():
     if 'username' not in session or session['user_type'] != 'professore':
@@ -143,7 +204,6 @@ def create_test():
 
             # Process questions
             questions = []
-            #add dummy question because indexes start from 0
             for key in request.form:
                 if key.startswith('questions['):
                     index = int(key.split('[')[1].replace(']', ''))-1  # Extract the question index
@@ -154,7 +214,6 @@ def create_test():
                         if 'text' in key:
                             questions[int(index)]['options'].append({'text': request.form[key], 'correct': 0})  # Default correct value
                         elif 'correct' in key:
-                            # Update correct value based on the checkbox
                             questions[index]['options'][option_index]['correct'] = 1 if request.form[key] == '1' else 0
 
             # Insert questions and their options into the database
@@ -188,7 +247,7 @@ def add_question(test_id):
         return redirect(url_for('index'))
 
     if request.method == 'POST':
-        question_text = request.form['question_text']  # Get the question text
+        question_text = request.form['question_text']
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -197,12 +256,12 @@ def add_question(test_id):
         question_id = cursor.lastrowid  # Get the id of the inserted question
 
         # Add options to the question
-        options = request.form.getlist('option')  # Change to 'option'
-        correct_options = request.form.getlist('correct_option')  # Change to 'correct_option'
+        options = request.form.getlist('option')
+        correct_options = request.form.getlist('correct_option')
 
         for option_text in options:
             if option_text:  # Only add if the option text is not empty
-                is_correct = '1' if option_text in correct_options else '0'  # Check if the option is correct
+                is_correct = '1' if option_text in correct_options else '0'
                 cursor.execute("INSERT INTO opzione (testo, vero, domanda_id) VALUES (%s, %s, %s)", 
                                (option_text, is_correct, question_id))
 
@@ -211,6 +270,86 @@ def add_question(test_id):
         return redirect(url_for('professor_tests'))
 
     return render_template('add_question.html', test_id=test_id)
+
+@app.route('/stop_exam_session/<int:test_id>', methods=['POST'])
+def stop_exam_session(test_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("DELETE FROM codice WHERE test_id = %s", (test_id,))
+        conn.commit()
+        flash('Exam session ended successfully!')
+    except Exception as e:
+        print(f"Error stopping exam session: {e}")
+        flash('An error occurred while stopping the exam session.')
+    finally:
+        conn.close()
+
+    return redirect(url_for('professor_tests'))
+
+
+from flask import session, request, redirect, url_for, render_template, flash
+import datetime
+import random
+
+@app.route('/submit_code', methods=['POST'])
+def submit_code():
+    if 'username' not in session or 'user_type' != 'alunno':
+        return redirect(url_for('index'))
+    
+    user = session['username']
+    code_id = request.form.get('code_id')
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if student already submitted this test
+    cursor.execute("SELECT submission_date FROM test_alunno WHERE alunno_username = %s AND codice_id = %s", (user, code_id))
+    submission = cursor.fetchone()
+
+    if submission:
+        flash('Test already submitted. You cannot retake this test.')
+        conn.close()
+        return redirect(url_for('index'))
+
+    # Retrieve all questions and options for the test if not already answered
+    cursor.execute("SELECT domanda.id AS domanda_id, domanda.testo AS domanda_text, opzione.id AS opzione_id, opzione.testo AS opzione_text, opzione.vero AS is_correct "
+                   "FROM domanda "
+                   "JOIN opzione ON opzione.domanda_id = domanda.id "
+                   "WHERE domanda.test_id = (SELECT test_id FROM codice WHERE id = %s)", (code_id,))
+    questions = cursor.fetchall()
+
+    # Check if responses exist; if not, initialize them
+    cursor.execute("SELECT * FROM risposta WHERE alunno_username = %s AND codice_id = %s", (user, code_id))
+    existing_responses = cursor.fetchall()
+
+    if not existing_responses:
+        # Randomize questions and insert initial None responses
+        question_order = list(range(len(questions)))
+        random.shuffle(question_order)
+
+        for order, question in enumerate(question_order):
+            domanda_id = questions[question]['domanda_id']
+            cursor.execute("INSERT INTO risposta (alunno_username, codice_id, domanda_id, opzione_id, ordine) VALUES (%s, %s, %s, %s, %s)",
+                           (user, code_id, domanda_id, None, order))
+        conn.commit()
+
+    # Retrieve and sort questions based on their order
+    cursor.execute("SELECT domanda.id AS domanda_id, domanda.testo AS domanda_text, opzione.id AS opzione_id, opzione.testo AS opzione_text, opzione.vero AS is_correct, risposta.ordine "
+                   "FROM risposta "
+                   "JOIN domanda ON domanda.id = risposta.domanda_id "
+                   "JOIN opzione ON opzione.domanda_id = domanda.id "
+                   "WHERE risposta.alunno_username = %s AND risposta.codice_id = %s "
+                   "ORDER BY risposta.ordine", (user, code_id))
+    ordered_questions = cursor.fetchall()
+    conn.close()
+
+    # Store questions and answers in session
+    session['questions'] = ordered_questions
+    session['answers'] = [None] * len(ordered_questions)  # Initialize answers
+
+    return redirect(url_for('exam'))
 
 @app.route('/exam')
 def exam():
@@ -227,85 +366,51 @@ def submit_answer():
     if 'username' not in session or 'questions' not in session:
         return redirect(url_for('index'))
 
+    answer = request.form.get('answer')
     question_index = int(request.form['question_index'])
-    selected_answer = request.form.get('answer')
     
-    session['answers'][question_index] = selected_answer
-
-    next_question = question_index + 1
-    if next_question < len(session['questions']):
-        return redirect(url_for('exam', q=next_question))
-    else:
-        return redirect(url_for('review'))
-
-@app.route('/review')
-def review():
-    if 'username' not in session:
-        return redirect(url_for('index'))
-    
-    questions = session.get('questions')
-    answers = session.get('answers')
-    
-    return render_template('review.html', questions=questions, answers=answers)
-
-@app.route('/submit_exam', methods=['POST'])
-def submit_exam():
-    if 'username' not in session or 'test_code' not in session:
-        return redirect(url_for('index'))
-
-    questions = session.get('questions')
-    answers = session.get('answers')
-    username = session.get('username')
-    test_code = session.get('test_code')
-
-    total_score, max_score = 0, 0
-    for i, question in enumerate(questions):
-        max_score += question['value'] if 'value' in question else 0
-        if answers[i] and answers[i] == question['correct_answer']:  # Assuming there's a way to fetch correct answers
-            total_score += question['value']
-
-    percentage = (total_score / max_score) * 100 if max_score > 0 else 0
+    # Store the answer in session and database
+    session['answers'][question_index] = answer
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE test_alunno SET voto = %s WHERE alunno_username = %s AND codice_id = %s", (percentage, username, test_code))
+    
+    question = session['questions'][question_index]
+    domanda_id = question['domanda_id']
+    code_id = session['code_id']
+    user = session['username']
+    
+    cursor.execute("UPDATE risposta SET opzione_id = %s WHERE alunno_username = %s AND codice_id = %s AND domanda_id = %s",
+                   (answer, user, code_id, domanda_id))
     conn.commit()
     conn.close()
 
-    flash(f'Exam submitted! Your score is {total_score}/{max_score} ({percentage:.2f}%)')
-    session.clear()
+    # Redirect to the next question or finish
+    if question_index + 1 < len(session['questions']):
+        return redirect(url_for('exam') + f'?q={question_index + 1}')
+    else:
+        # Finish the exam
+        return redirect(url_for('exam_results'))
 
-    return redirect(url_for('index'))
-
-
-import datetime  # Import datetime for handling dates
-
-@app.route('/start_exam_session/<int:test_id>', methods=['POST'])
-def start_exam_session(test_id):
-    if 'username' not in session or session['user_type'] != 'professore':
+@app.route('/exam_results')
+def exam_results():
+    if 'username' not in session or 'questions' not in session:
         return redirect(url_for('index'))
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    questions = session['questions']
+    answers = session['answers']
+    results = []
 
-    # Insert a new entry in the codice table
-    try:
-        generation_date = datetime.date.today()
-        cursor.execute("INSERT INTO codice (data_generazione, test_id) VALUES (%s, %s)", (generation_date, test_id))
-        conn.commit()
-        code_id = cursor.lastrowid  # Get the ID of the newly created code
-        flash(f'Exam session started! Code: {code_id}')  # Provide the code to the professor
+    # Evaluate the answers
+    for question, user_answer in zip(questions, answers):
+        correct_options = [option['vero'] for option in question['options'] if option['vero'] == 1]
+        results.append({
+            'question': question['testo'],
+            'user_answer': user_answer,
+            'correct': user_answer in correct_options
+        })
 
-    except Exception as e:
-        print(f"Error starting exam session: {e}")
-        flash('An error occurred while starting the exam session.')
-    
-    finally:
-        conn.close()
-
-    return redirect(url_for('professor_tests'))
-
-
+    return render_template('exam_results.html', results=results)
 
 if __name__ == '__main__':
     app.run(debug=True)

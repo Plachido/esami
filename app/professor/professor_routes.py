@@ -7,7 +7,7 @@ import datetime
 
 professor_bp = Blueprint('professor', __name__)
 
-@professor_bp.route('/professor/professor_tests')
+@professor_bp.route('/professor_tests')
 def professor_tests():
     if 'username' not in session or session['user_type'] != 'professore':
         return redirect(url_for('auth.index'))
@@ -41,61 +41,86 @@ def professor_tests():
     conn.close()
     return render_template('professor_tests.html', tests=tests, test_session_map=test_session_map)
 
-
-@professor_bp.route('professor/create_test', methods=['GET', 'POST'])
-def create_test():
+@professor_bp.route('/create_test/', defaults={'test_id': None}, methods=['GET', 'POST'])
+@professor_bp.route('/create_test/<int:test_id>', methods=['GET', 'POST'])
+def create_test(test_id):
     if 'username' not in session or session['user_type'] != 'professore':
         return redirect(url_for('auth.index'))
 
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
     if request.method == 'POST':
         test_name = request.form['test_name']
+        test_description = request.form.get('test_description', '')  # Get test description
         username = session['username']
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute("INSERT INTO test (nome, professore_username) VALUES (%s, %s)", (test_name, username))
+        if test_id is None:  # Creating a new test
+            cursor.execute("INSERT INTO test (nome, descrizione, professore_username) VALUES (%s, %s, %s)",
+                           (test_name, test_description, username))
             test_id = cursor.lastrowid  # Get the id of the inserted test
+        else:  # Updating an existing test
+            cursor.execute("UPDATE test SET nome = %s, descrizione = %s WHERE id = %s",
+                           (test_name, test_description, test_id))
 
-            # Process questions
-            questions = []
-            for key in request.form:
-                if key.startswith('questions['):
-                    index = int(key.split('[')[1].replace(']', ''))-1  # Extract the question index
-                    if 'text' in key and 'options' not in key:
-                        questions.append({'text': request.form[key], 'options': []})
-                    elif 'options' in key:
-                        option_index = int(key.split('[')[3].replace(']', ''))-1  # Extract the option index
-                        if 'text' in key:
-                            questions[int(index)]['options'].append({'text': request.form[key], 'correct': 0})  # Default correct value
-                        elif 'correct' in key:
-                            questions[index]['options'][option_index]['correct'] = 1 if request.form[key] == '1' else 0
+            # Deactivate all old questions for the current test
+            cursor.execute("UPDATE domanda SET active = 0 WHERE test_id = %s", (test_id,))
 
-            # Insert questions and their options into the database
-            for question in questions:
-                question_text = question['text']
-                cursor.execute("INSERT INTO domanda (test_id, testo) VALUES (%s, %s)", (test_id, question_text))
-                question_id = cursor.lastrowid  # Get the id of the inserted question
+        # Process questions
+        questions = []
+        for key in request.form:
+            if key.startswith('questions['):
+                index = int(key.split('[')[1].replace(']', '')) - 1  # Extract the question index
+                if 'text' in key and 'options' not in key:
+                    questions.append({'text': request.form[key], 'options': []})
+                elif 'options' in key:
+                    option_index = int(key.split('[')[3].replace(']', '')) - 1  # Extract the option index
+                    if 'text' in key:
+                        questions[index]['options'].append({'text': request.form[key], 'correct': 0})  # Default correct value
+                    elif 'correct' in key:
+                        questions[index]['options'][option_index]['correct'] = 1 if request.form[key] == '1' else 0
 
-                # Insert options
-                for option in question['options']:
-                    option_text = option['text']
-                    is_correct = option.get('correct', 0)  # Default to 0 if not set
-                    cursor.execute("INSERT INTO opzione (testo, vero, domanda_id) VALUES (%s, %s, %s)", 
-                                   (option_text, is_correct, question_id))
+        # Insert questions and their options into the database
+        for question in questions:
+            question_text = question['text']
+            cursor.execute("INSERT INTO domanda (test_id, testo, active) VALUES (%s, %s, 1)", (test_id, question_text))
+            question_id = cursor.lastrowid  # Get the id of the inserted question
 
-            conn.commit()
-            flash('Test created successfully with questions and options!')
-        except Exception as e:
-            print(f"Error creating test: {e}")  # Error logging
-            flash('An error occurred while creating the test.')
-        finally:
-            conn.close()
+            # Insert options
+            for option in question['options']:
+                option_text = option['text']
+                is_correct = option.get('correct', 0)  # Default to 0 if not set
+                cursor.execute("INSERT INTO opzione (testo, vero, domanda_id) VALUES (%s, %s, %s)",
+                               (option_text, is_correct, question_id))
 
+        conn.commit()
+        flash('Test saved successfully with questions and options!')
         return redirect(url_for('professor.professor_tests'))
 
-    return render_template('create_test.html')
+    # If GET, fetch existing test and questions
+    if test_id is not None:
+        cursor.execute("SELECT nome, descrizione FROM test WHERE id = %s", (test_id,))
+        test_data = cursor.fetchone()
+
+        test_name = test_data[0] if test_data else None
+        test_description = test_data[1] if test_data else None
+        
+        cursor.execute("SELECT * FROM domanda WHERE test_id = %s AND active = 1", (test_id,))
+        questions = cursor.fetchall()
+        
+        # Convert tuples to dictionaries for easier manipulation
+        questions = [{'id': question[0], 'text': question[1], 'options': []} for question in questions]
+        
+        # Fetch options for each question
+        for question in questions:
+            cursor.execute("SELECT * FROM opzione WHERE domanda_id = %s", (question['id'],))
+            options = cursor.fetchall()
+            question['options'] = [{'id': option[0], 'text': option[1], 'correct': option[2]} for option in options]
+
+        return render_template('create_test.html', test_name=test_name, test_description=test_description, questions=questions, test_id=test_id)
+
+    return render_template('create_test.html', test_name=None, test_description=None, questions=[])
+
 
 
 @professor_bp.route('/add_question/<int:test_id>', methods=['GET', 'POST'])
@@ -168,7 +193,7 @@ def stop_exam_session(test_id):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("DELETE FROM codice WHERE test_id = %s", (test_id,))
+        cursor.execute("UPDATE codice SET active = 0 WHERE test_id = %s", (test_id,))
         conn.commit()
         flash('Exam session ended successfully!')
     except Exception as e:

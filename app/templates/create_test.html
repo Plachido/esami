@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Test</title>
+    <title>Crea Test</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
@@ -43,6 +43,7 @@
             background-color: #5cb85c;
             color: white;
             cursor: pointer;
+            margin-top: 10px;
         }
         button:hover {
             background-color: #4cae4c;
@@ -55,23 +56,26 @@
         }
     </style>
     <script>
-        function addQuestion() {
-            const questionsContainer = document.getElementById('questions-container');
-            const questionIndex = questionsContainer.children.length;
+function addQuestion() {
+    const questionsContainer = document.getElementById('questions-container');
+    
+    // Imposta l'indice della domanda controllando il numero totale di contenitori di domande più 1
+    const questionIndex = questionsContainer.getElementsByClassName('question-container').length + 1;
 
-            const questionDiv = document.createElement('div');
-            questionDiv.className = 'question-container';
-            questionDiv.innerHTML = `
-                <label for="question-text-${questionIndex}">Question Text:</label>
-                <input type="text" id="question-text-${questionIndex}" name="question_text" required>
-                <div class="option-container" id="options-container-${questionIndex}">
-                    <h4>Options</h4>
-                </div>
-                <button type="button" onclick="addOption(${questionIndex})">Add Option</button>
-                <button type="button" class="remove-question" onclick="removeQuestion(this)">Remove Question</button>
-            `;
-            questionsContainer.appendChild(questionDiv);
-        }
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question-container';
+    questionDiv.innerHTML = `
+        <label for="question-text-${questionIndex}">Testo della Domanda:</label>
+        <input type="text" id="question-text-${questionIndex}" name="questions[${questionIndex}][text]" required>
+        <div class="option-container" id="options-container-${questionIndex}">
+            <h4>Opzioni</h4>
+        </div>
+        <button type="button" onclick="addOption(${questionIndex})">Aggiungi Opzione</button>
+        <button type="button" class="remove-question" onclick="removeQuestion(this)">Rimuovi Domanda</button>
+    `;
+    questionsContainer.appendChild(questionDiv);
+}
+
 
         function addOption(questionIndex) {
             const optionsContainer = document.getElementById(`options-container-${questionIndex}`);
@@ -80,86 +84,81 @@
             const optionDiv = document.createElement('div');
             optionDiv.className = 'option';
             optionDiv.innerHTML = `
-                <label for="option-text-${questionIndex}-${optionIndex}">Option:</label>
-                <input type="text" id="option-text-${questionIndex}-${optionIndex}" name="options" required>
-                <input type="checkbox" id="correct-option-${questionIndex}-${optionIndex}" name="correct_options" value="${optionIndex}"> Correct
-                <button type="button" class="remove-option" onclick="removeOption(this)">Remove Option</button>
+                <label for="option-text-${questionIndex}-${optionIndex}">Opzione:</label>
+                <input type="text" id="option-text-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][text]" required>
+                <input type="checkbox" id="correct-option-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][correct]" value="1"> Corretta
+                <button type="button" class="remove-option" onclick="removeOption(this)">Rimuovi Opzione</button>
             `;
             optionsContainer.appendChild(optionDiv);
         }
 
         function removeQuestion(button) {
-            button.parentElement.remove();
+            button.closest('.question-container').remove();
         }
 
         function removeOption(button) {
-            button.parentElement.remove();
+            button.closest('.option').remove();
+        }
+
+        // Funzione per popolare le domande esistenti
+        function populateExistingQuestions(questions) {
+            questions.forEach((question, questionIndex) => {
+                const questionsContainer = document.getElementById('questions-container');
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-container';
+                questionDiv.innerHTML = `
+                    <label for="question-text-${questionIndex}">Testo della Domanda:</label>
+                    <input type="text" id="question-text-${questionIndex}" name="questions[${questionIndex}][text]" required value="${question.text}">
+                    <div class="option-container" id="options-container-${questionIndex}">
+                        <h4>Opzioni</h4>
+                    </div>
+                    <button type="button" onclick="addOption(${questionIndex})">Aggiungi Opzione</button>
+                    <button type="button" class="remove-question" onclick="removeQuestion(this)">Rimuovi Domanda</button>
+                `;
+                questionsContainer.appendChild(questionDiv);
+
+                // Popola le opzioni per ogni domanda
+                question.options.forEach((option, optionIndex) => {
+                    const optionsContainer = document.getElementById(`options-container-${questionIndex}`);
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'option';
+                    optionDiv.innerHTML = `
+                        <label for="option-text-${questionIndex}-${optionIndex}">Opzione:</label>
+                        <input type="text" id="option-text-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][text]" required value="${option.text}">
+                        <input type="checkbox" id="correct-option-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][correct]" value="1" ${option.correct ? 'checked' : ''}> Corretta
+                        <button type="button" class="remove-option" onclick="removeOption(this)">Rimuovi Opzione</button>
+                    `;
+                    optionsContainer.appendChild(optionDiv);
+                });
+            });
         }
     </script>
 </head>
 <body>
-    <h2>Create a New Test</h2>
+    <h2>Crea un Nuovo Test</h2>
     <div class="form-container">
         <form id="create-test-form" action="{{ url_for('professor.create_test') }}" method="POST">
             <div>
-                <label for="test-name">Test Name:</label>
-                <input type="text" id="test-name" name="test_name" required>
+                <label for="test-name">Nome del Test:</label>
+                <input type="text" id="test-name" name="test_name" required value="{{ test_name or '' }}">
             </div>
             <div>
-                <label for="test-description">Test Description:</label>
-                <textarea id="test-description" name="test_description" required></textarea>
-            </div>
+                <label for="test-description">Descrizione del Test:</label>
+                <textarea id="test-description" name="test_description" required>{{ test_description or '' }}</textarea>
+            </div>            
             <div id="questions-container">
-                <h3>Questions</h3>
+                <h3>Domande</h3>
+                <!-- Le domande esistenti verranno popolate qui -->
+                <script>
+                    // Chiama la funzione per popolare le domande al caricamento della pagina
+                    const existingQuestions = {{ questions|tojson }};
+                    populateExistingQuestions(existingQuestions);
+                </script>
             </div>
-            <button type="button" onclick="addQuestion()">Add Question</button>
+            <button type="button" onclick="addQuestion()">Aggiungi Domanda</button>
             <br><br>
-            <button type="submit">Create Test</button>
+            <button type="submit">Crea Test</button>
         </form>
     </div>
-
-    <script>
-        function addQuestion() {
-            const questionsContainer = document.getElementById('questions-container');
-            const questionIndex = questionsContainer.children.length;
-
-            const questionDiv = document.createElement('div');
-            questionDiv.className = 'question-container';
-            questionDiv.innerHTML = `
-                <label for="question-text-${questionIndex}">Question Text:</label>
-                <input type="text" id="question-text-${questionIndex}" name="questions[${questionIndex}][text]" required>
-                <div class="option-container" id="options-container-${questionIndex}">
-                    <h4>Options</h4>
-                </div>
-                <button type="button" onclick="addOption(${questionIndex})">Add Option</button>
-                <button type="button" class="remove-question" onclick="removeQuestion(this)">Remove Question</button>
-            `;
-            questionsContainer.appendChild(questionDiv);
-        }
-
-        function addOption(questionIndex) {
-            const optionsContainer = document.getElementById(`options-container-${questionIndex}`);
-            const optionIndex = optionsContainer.children.length;
-
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'option';
-            optionDiv.innerHTML = `
-                <label for="option-text-${questionIndex}-${optionIndex}">Option:</label>
-                <input type="text" id="option-text-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][text]" required>
-                <input type="checkbox" id="correct-option-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][correct]" value="1"> Correct
-                <button type="button" class="remove-option" onclick="removeOption(this)">Remove Option</button>
-            `;
-            optionsContainer.appendChild(optionDiv);
-        }
-
-        function removeQuestion(button) {
-            button.parentElement.remove();
-        }
-
-        function removeOption(button) {
-            button.parentElement.remove();
-        }
-    </script>
 </body>
-
 </html>

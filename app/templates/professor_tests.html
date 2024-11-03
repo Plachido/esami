@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professor Tests</title>
+    <title>Test del Professore</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -37,71 +37,80 @@
         .hidden {
             display: none;
         }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
 
-<div class="container mt-5">
-    <h2>Your Tests</h2>
-    <div class="list-group">
-        {% for test in tests %}
-        <div class="test-item d-flex justify-content-between align-items-start">
-            <div class="flex-grow-1">
-                <h5>{{ test.nome }}</h5>
-                
-                <!-- Check if there is an active code for this test -->
-                {% if test.id in test_session_map %}
-                <!-- Timer Display -->
-                <span id="timer-{{ test.id }}" class="timer">00:00</span>
-                
-                <!-- Code Display -->
-                <div class="code-box">
-                    Code: <span id="code-{{ test.id }}">{{ test_session_map[test.id][0].code_id }}</span>
-                    <button class="btn btn-sm btn-outline-info ml-2" onclick="copyCode({{ test.id }})">Copy</button>
-                </div>
-                {% endif %}
-            </div>
-            <div>
-                <!-- Show Start Exam button only if there's no active session -->
-                {% if test.id not in test_session_map %}
-                <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#startExamModal" onclick="setTestId({{ test.id }})">
-                    Start Exam
-                </button>
-                {% else %}
-                <!-- Show Stop button if there's an active session -->
-                <button class="btn btn-danger" id="stop-button-{{ test.id }}" onclick="stopExamSession({{ test.id }})">
-                    Stop
-                </button>
-                {% endif %}
-            </div>
+    <div class="container mt-5">
+        <div class="header">
+            <h2>I tuoi Test</h2>
+            <!-- Pulsante per creare un nuovo esame, allineato a destra -->
+            <a href="create_test" class="btn btn-success">Crea Nuovo Esame</a>
         </div>
-        {% endfor %}
+        <div class="list-group">
+            {% for test in tests %}
+            <div class="test-item d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <h5>{{ test.nome }}</h5>
+                    
+                    <!-- Controlla se c'è un codice attivo per questo test -->
+                    {% if test.id in test_session_map %}
+                    <!-- Visualizzazione Timer -->
+                    <span id="timer-{{ test.id }}" class="timer">00:00</span>
+                    
+                    <!-- Visualizzazione Codice -->
+                    <div class="code-box">
+                        Codice: <span id="code-{{ test.id }}">{{ test_session_map[test.id][0].code_id }}</span>
+                        <button class="btn btn-sm btn-outline-info ml-2" onclick="copyCode({{ test.id }})">Copia</button>
+                    </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <!-- Mostra il pulsante Inizia Esame solo se non c'è una sessione attiva -->
+                    {% if test.id not in test_session_map %}
+                    <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#startExamModal" onclick="setTestId({{ test.id }})">
+                        Inizia Esame
+                    </button>
+                    {% else %}
+                    <!-- Mostra il pulsante Ferma se c'è una sessione attiva -->
+                    <button class="btn btn-danger mr-2" id="stop-button-{{ test.id }}" onclick="stopExamSession({{ test.id }})">
+                        Ferma
+                    </button>
+                    {% endif %}
+                    <!-- Pulsante Aggiorna -->
+                    <button class="btn btn-warning" onclick="updateTest({{ test.id }})">
+                        Aggiorna
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
-    <!-- Button to create a new exam -->
-    <div class="text-center mt-4">
-        <a href="create_test" class="btn btn-success">Create New Exam</a>
-    </div>
-</div>
-
-<!-- Modal for Exam Configuration -->
+<!-- Modale per Configurazione Esame -->
 <div class="modal" id="startExamModal">
     <div class="modal-dialog">
         <div class="modal-content">
             <form id="examForm" method="POST" action="">
                 <div class="modal-header">
-                    <h4 class="modal-title">Start Exam Session</h4>
+                    <h4 class="modal-title">Inizia Sessione Esame</h4>
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="test_id" name="test_id">
                     <div class="form-group">
-                        <label for="exam_time">Exam Time (minutes):</label>
+                        <label for="exam_time">Tempo Esame (minuti):</label>
                         <input type="number" id="exam_time" name="exam_duration" value="60" class="form-control">
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Start Exam</button>
+                    <button type="submit" class="btn btn-success">Inizia Esame</button>
                 </div>
             </form>
         </div>
@@ -111,7 +120,7 @@
 <script>
     function setTestId(testId) {
         document.getElementById("test_id").value = testId;
-        // Set the action for the form dynamically
+        // Imposta l'azione per il modulo dinamicamente
         document.getElementById("examForm").action = `/professor/start_exam_session/${testId}`;
     }
     
@@ -119,10 +128,10 @@
         fetch(`/professor/stop_exam_session/${testId}`, { method: 'POST' })
             .then(response => {
                 if (response.ok) {
-                    alert("Exam session stopped.");
-                    location.reload();  // Refresh to update button visibility
+                    alert("Sessione d'esame fermata.");
+                    location.reload();  // Ricarica per aggiornare la visibilità dei pulsanti
                 } else {
-                    alert("Failed to stop the exam session.");
+                    alert("Impossibile fermare la sessione d'esame.");
                 }
             });
     }
@@ -130,37 +139,46 @@
     function copyCode(testId) {
         const codeElement = document.getElementById(`code-${testId}`);
         navigator.clipboard.writeText(codeElement.textContent)
-            .then(() => alert("Code copied to clipboard!"))
-            .catch(err => alert("Failed to copy code: " + err));
+            .then(() => alert("Codice copiato negli appunti!"))
+            .catch(err => alert("Impossibile copiare il codice: " + err));
     }
 
-    // Function to update the timers for each active code
     function startTimers(testSessionMap) {
         for (const testId in testSessionMap) {
             const sessions = testSessionMap[testId];
-            let timeLeft = Math.floor(sessions[0].remaining_time); // Remaining time in seconds
+            let timeLeft = Math.floor(sessions[0].remaining_time); // Tempo rimanente in secondi
             let timerElement = document.getElementById(`timer-${testId}`);
 
-            // Start countdown
-            let timerInterval = setInterval(() => {
+            function updateTimer() {
                 if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    timerElement.textContent = "Time's up!";
+                    timerElement.textContent = "Tempo scaduto!";
                     return;
                 }
                 let minutes = Math.floor(timeLeft / 60);
                 let seconds = timeLeft % 60;
                 timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 timeLeft--;
-            }, 1000);
+
+                // Usa setTimeout per chiamare updateTimer di nuovo dopo 1 secondo
+                setTimeout(updateTimer, 1000);
+            }
+
+            // Inizia il timer
+            updateTimer();
         }
     }
 
-    // Start timers on page load
+    // Inizia i timer al caricamento della pagina
     window.onload = function() {
         const testSessionMap = {{ test_session_map | tojson }};
         startTimers(testSessionMap);
     };
+
+    function updateTest(testId) {
+        // Reindirizza o apre un modale per aggiornare il test con l'id specificato
+        // Ad esempio, potresti aprire un modale o navigare a una pagina di aggiornamento
+        window.location.href = `/professor/create_test/${testId}`; // Regola l'URL come necessario
+    }
 </script>
 
 </body>

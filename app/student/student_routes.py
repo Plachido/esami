@@ -2,7 +2,7 @@
 from flask import Blueprint, session, redirect, url_for, render_template, request, flash, jsonify
 from database import get_db_connection
 import random  # Make sure to import random for shuffling
-from datetime import datetime  # Import datetime for submission time
+from datetime import datetime, timedelta  # Import datetime for submission time
 student_bp = Blueprint('student', __name__)
 # student/student_routes.py
 
@@ -11,8 +11,6 @@ from database import get_db_connection
 import random
 
 student_bp = Blueprint('student', __name__)
-
-@student_bp.route('/enter_test_code', methods=['GET', 'POST'])
 
 @student_bp.route('/enter_test_code', methods=['GET', 'POST'])
 def enter_test_code():
@@ -30,18 +28,26 @@ def enter_test_code():
         cursor = conn.cursor()
 
         try:
-            # Check if the test code is valid
+            # Check if the test code is valid, active, and not expired
             cursor.execute("""
                 SELECT test_id, data_generazione, exam_duration, stopped 
                 FROM codice 
                 WHERE id = %s
+                AND active = 1
                 AND (data_generazione + INTERVAL exam_duration MINUTE) > NOW() 
                 AND stopped = 0;
             """, (session_code,))
             code_entry = cursor.fetchone()
-
             if code_entry:
                 test_code = code_entry[0]
+                duration_in_minutes = code_entry[2]
+                start_time = code_entry[1]
+                end_time = start_time + timedelta(minutes=duration_in_minutes)
+                
+                # Calculate remaining time in seconds
+                remaining_time = int((end_time - datetime.now()).total_seconds())
+                
+                session['remaining_time'] = remaining_time  # Pass to frontend
                 session['test_code'] = test_code
                 session['session_code'] = session_code
                 session.modified = True
@@ -66,14 +72,15 @@ def enter_test_code():
                 cursor.execute("SELECT * FROM risposta WHERE alunno_username = %s AND codice_id = %s", (user, session_code))
                 responses = cursor.fetchall()
 
-                # First, we need all the questions for the test
+                # Fetch only active questions for the test
                 cursor.execute("""
                     SELECT domanda.id AS domanda_id, domanda.testo AS domanda_text, 
                            opzione.id AS opzione_id, opzione.testo AS opzione_text, 
                            opzione.vero AS is_correct, 0 AS ordine
                     FROM domanda
                     JOIN opzione ON opzione.domanda_id = domanda.id
-                    WHERE domanda.test_id = %s;
+                    WHERE domanda.test_id = %s
+                    AND domanda.active = 1;
                 """, (test_code,))
                 questions = cursor.fetchall()
                 structured_questions = restructure_questions(questions)
@@ -82,17 +89,16 @@ def enter_test_code():
                     # If there are existing responses, load them into the session
                     session['answers'] = [None] * len(structured_questions)
                     for response in responses:
-                        question_id = response[2]  # Access using index, 2 for domanda_id
-                        option_id = response[3]    # Access using index, 3 for opzione_id
-                        order = response[4]        # Access using index, 4 for ordine
-                        # Find the index of the question in structured_questions
+                        question_id = response[2]
+                        option_id = response[3]
+                        order = response[4]
                         cursor.execute("SELECT testo FROM opzione WHERE id = %s", (option_id,))
                         option_text = cursor.fetchone()[0]
                         question_index = next((i for i, q in enumerate(structured_questions) if q['id'] == question_id), None)
                         if question_index is not None:
                             session['answers'][question_index] = option_text
                 else:
-                    # If there are no responses yet, we write an empty response for each question and set an order for each question
+                    # If no responses exist, initialize responses for each question
                     random.shuffle(questions)
                     structured_questions = restructure_questions(questions)
                     for order, question in enumerate(structured_questions):
@@ -107,7 +113,7 @@ def enter_test_code():
                 session.modified = True
                 return redirect(url_for('student.exam'))
             else:
-                return jsonify({"message": "Invalid or expired test code."}), 400
+                return jsonify({"message": "Invalid, inactive, or expired test code."}), 400
         except Exception as e:
             print(f"Error: {e}")
             return jsonify({"message": "An error occurred."}), 500
@@ -116,6 +122,8 @@ def enter_test_code():
             conn.close()
 
     return render_template('enter_test_code.html')
+
+
 
 
 def restructure_questions(data):
@@ -253,6 +261,20 @@ def exam_results():
 
     return render_template('exam_results.html', results=results)
 
+@student_bp.route('/check_active_status')
+def check_active_status():
+    session_code = session.get('session_code')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT active FROM codice WHERE id = %s", (session_code,))
+    active = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+
+    return jsonify({"active": active == 1})
+
+
 @student_bp.route('/submit_exam', methods=['POST'])
 def submit_exam():
     if 'username' not in session or 'questions' not in session:
@@ -262,12 +284,17 @@ def submit_exam():
     cursor = conn.cursor()
 
     user = session['username']
-    code_id = session['test_code']
+    session_code = session['session_code']
     submission_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    cursor.execute("UPDATE test_alunno SET submission_date = %s WHERE alunno_username = %s AND codice_id = %s", (submission_time, user, session['session_code']))
+    cursor.execute("UPDATE test_alunno SET submission_date = %s WHERE alunno_username = %s AND codice_id = %s",
+                   (submission_time, user, session_code))
     conn.commit()
     conn.close()
 
-    # Render `enter_test_code.html` with a success message
-    return render_template('enter_test_code.html', message="EXAM SUBMITTED")
+    # Clear session variables for security
+    session.pop('questions', None)
+    session.pop('answers', None)
+    session.pop('remaining_time', None)
+    
+    return jsonify({"message": "Exam submitted successfully"})

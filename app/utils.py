@@ -14,7 +14,7 @@ def get_user_type(username):
 
 
 def get_active_exam_session(cursor):
-    cursor.execute("SELECT * FROM codice")
+    cursor.execute("SELECT * FROM codice where active = 1")
     codes = cursor.fetchall()
     current_time = datetime.datetime.now()
     code_list = []

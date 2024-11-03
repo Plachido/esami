@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enter Test Code</title>
+    <title>Inserisci il Codice del Test</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* Styles for the page */
+        /* Stili per la pagina */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -79,10 +79,10 @@
     </style>
 </head>
 <body>
-    <a href="{{ url_for('auth.logout') }}" class="logout-button">Logout</a>
-    <h2>Enter Your Test Code</h2>
+    <a href="{{ url_for('auth.logout') }}" class="logout-button">Disconnettiti</a>
+    <h2>Inserisci il Codice del Tuo Test</h2>
 
-    <!-- Display success message if provided -->
+    <!-- Visualizza messaggio di successo se fornito -->
     {% if message %}
         <div class="message">{{ message }}</div>
     {% endif %}
@@ -90,15 +90,15 @@
     <div class="code-container">
         <form id="testCodeForm" onsubmit="submitTestCode(event)">
             <div class="code-input">
-                <label for="testCode">Test Code:</label>
-                <input type="text" id="testCode" name="testCode" placeholder="Enter your exam code" required>
+                <label for="testCode">Codice del Test:</label>
+                <input type="text" id="testCode" name="testCode" placeholder="Inserisci il codice del tuo esame" required>
             </div>
-            <button type="submit" class="submit-button">Submit</button>
+            <button type="submit" class="submit-button">Invia</button>
         </form>
     </div>
     <script>
         async function submitTestCode(event) {
-            event.preventDefault(); // Prevent the form from submitting the default way
+            event.preventDefault(); // Impedisce l'invio del modulo nel modo predefinito
 
             const testCode = document.getElementById('testCode').value;
             if (testCode) {
@@ -112,18 +112,18 @@
                     });
 
                     if (response.ok) {
-                        // Redirect to the exam page or handle success
+                        // Reindirizza alla pagina dell'esame o gestisce il successo
                         window.location.href = '/student/exam';
                     } else {
                         const errorText = await response.text();
-                        alert(`Error: ${errorText}`);
+                        alert(`Errore: ${errorText}`);
                     }
                 } catch (error) {
-                    console.error('Error submitting test code:', error);
-                    alert('An error occurred. Please try again.');
+                    console.error('Errore nell\'invio del codice del test:', error);
+                    alert('Si è verificato un errore. Per favore riprova.');
                 }
             } else {
-                alert('Please enter a test code.');
+                alert('Per favore, inserisci un codice del test.');
             }
         }
     </script>

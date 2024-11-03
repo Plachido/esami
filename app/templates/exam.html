@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exam</title>
+    <title>Esame</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
@@ -73,11 +73,16 @@
         .nav-button:hover {
             background-color: #0056b3;
         }
+        #timer {
+            font-size: 1.2em;
+            color: #333;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="question-container">
-        <h2>Question {{ index + 1 }} of {{ total }}</h2>
+        <h2>Domanda {{ index + 1 }} di {{ total }}</h2>
         <p>{{ question['question'] }}</p>
         <form id="question-form">
             <div class="options">
@@ -93,60 +98,107 @@
         
         <div>
             {% if index > 0 %}
-                <button class="nav-button" onclick="navigate(-1)">Previous Question</button>
+                <button class="nav-button" onclick="navigate(event, -1)">Domanda Precedente</button>
             {% endif %}
             {% if index < total - 1 %}
-                <button class="nav-button" onclick="navigate(1)">Next Question</button>
+                <button class="nav-button" onclick="navigate(event, 1)">Domanda Successiva</button>
             {% endif %}
         </div>
-        <button class="review-button" onclick="reviewExam(event)">Review Exam</button>
+        <button class="review-button" onclick="reviewExam(event)">Rivedi Esame</button>
     </div>
 
+    <div id="timer"></div>
+
     <script>
+        // Configurazione timer
+        let remainingTime = {{ session['remaining_time'] | safe }}; // Tempo in secondi
+
+        async function startTimer() {
+            const timerDisplay = document.getElementById('timer');
+
+            async function updateTimer() {
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval); // Ferma il timer quando il tempo è scaduto
+                    await submitExam(); // Invia automaticamente quando il tempo è scaduto
+                } else {
+                    // Visualizza il tempo rimanente in minuti e secondi
+                    let minutes = Math.floor(remainingTime / 60);
+                    let seconds = remainingTime % 60;
+                    timerDisplay.textContent = `Tempo rimasto: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                    remainingTime--;
+                }
+            }
+
+            const timerInterval = setInterval(updateTimer, 1000); // Aggiorna ogni secondo
+        }
+
+        async function submitExam() {
+            const response = await fetch('/submit_exam', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            alert(data.message); // Notifica all'utente
+            window.location.href = "{{ url_for('student.exam_results') }}"; // Reindirizza ai risultati
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            startTimer();
+        });
+
+        async function reviewExam(event) {
+            event.preventDefault(); // Previene l'azione predefinita del pulsante
+            const response = await submitAnswer(); // Invia la risposta prima di rivedere
+            if (response.ok) {
+                window.location.href = '{{ url_for('student.review') }}';
+            } else {
+                console.error("Impossibile inviare la risposta:", response);
+            }
+        }
+
         async function submitAnswer() {
-            // Get the form data
+            // Ottieni i dati del modulo
             let form = document.getElementById('question-form');
             let formData = new FormData(form);
 
-            // Send the answer to the server and wait for the response
+            // Invia la risposta al server e aspetta la risposta
             return await fetch('/student/submit_answer', {
                 method: 'POST',
                 body: formData
             });
         }
 
-        async function reviewExam(event) {
-            event.preventDefault(); // Prevent the default action
-            const response = await submitAnswer(); // Submit the answer first
+        async function navigate(event, direction) {
+            event.preventDefault(); // Previene qualsiasi azione predefinita del modulo
 
-            if (response.ok) {
-                // Navigate to the review page if submission is successful
-                window.location.href = '{{ url_for('student.review') }}';
-            } else {
-                console.error("Failed to submit answer:", response);
-            }
-        }
-
-        async function navigate(direction) {
-            // Get the form data
             let form = document.getElementById('question-form');
             let formData = new FormData(form);
             formData.append(direction === 1 ? 'next_index' : 'prev_index', {{ index }} + direction);
 
-            // Send the answer to the server and wait for the response
             const response = await fetch('/student/submit_answer', {
                 method: 'POST',
                 body: formData
             });
 
             if (response.redirected) {
-                // If the server redirects, navigate to the new location
                 window.location.href = response.url;
             } else {
-                // If no redirection occurs, handle it (optional)
-                console.error("Failed to redirect:", response);
+                console.error("Impossibile reindirizzare:", response);
             }
         }
+
+        // Controlla lo stato attivo ogni 2 minuti
+        setInterval(() => {
+            fetch('student/check_active_status')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.active) {
+                        submitExam(); // Forza l'invio se l'esame è chiuso dal professore
+                    }
+                });
+        }, 120000); // 2 minuti
     </script>
 </body>
 </html>

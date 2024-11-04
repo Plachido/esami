@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestisci Professori</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #343a40;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 4px solid #007bff;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+        nav ul li a {
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        nav ul li a:hover {
+            text-decoration: underline;
+        }
+        main {
+            margin: 20px auto;
+            max-width: 800px;
+            text-align: center;
+        }
+        .form-section {
+            margin-bottom: 30px;
+        }
+        .professor-list {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .nav-button {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Gestisci Professori</h1>
+    <nav>
+        <ul>
+            <li><a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-light nav-button">Pannello di Amministrazione</a></li>
+            <li><a href="{{ url_for('auth.logout') }}" class="btn btn-danger nav-button">Disconnetti</a></li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <div class="form-section">
+        <h2>Aggiungi Nuovo Professore</h2>
+        <form action="{{ url_for('admin.add_professor') }}" method="post">
+            <input type="text" name="username" required placeholder="Username" class="form-control mb-2">
+            <input type="text" name="nome" required placeholder="Nome" class="form-control mb-2">
+            <input type="text" name="cognome" required placeholder="Cognome" class="form-control mb-2">
+            <input type="password" name="password" required placeholder="Password" class="form-control mb-2">
+            <button type="submit" class="btn btn-primary">Aggiungi Professore</button>
+        </form>
+    </div>
+
+    <div class="professor-list">
+        <h2>Lista Professori</h2>
+        <ul class="list-group">
+            {% for professor in professors %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ professor.nome }} {{ professor.cognome }} ({{ professor.username }})
+                <div>
+                    <form action="{{ url_for('admin.delete_professor', professor_username=professor.username) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Sei sicuro di voler eliminare questo professore?');">Elimina</button>
+                    </form>
+                    <a href="{{ url_for('admin.edit_professor', professor_username=professor.username) }}" class="btn btn-warning btn-sm">Modifica</a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!-- templates/select_academic_year.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleziona Anno Accademico</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #343a40;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 4px solid #007bff;
+        }
+        main {
+            margin: 20px auto;
+            max-width: 800px;
+            text-align: center;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        .btn {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Seleziona Anno Accademico</h1>
+</header>
+
+<main>
+    <form method="POST">
+        <div class="form-group">
+            <label for="anno_scolastico">Seleziona Anno Accademico:</label>
+            <select name="anno_scolastico" id="anno_scolastico" class="form-control" required>
+                {% for year in years %}
+                    <option value="{{ year[0] }}">{{ year[0] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Invia</button>
+    </form>
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-secondary">Torna al Pannello di Controllo</a>
+</main>
+
+</body>
+</html>

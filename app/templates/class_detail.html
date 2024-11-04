@@ -1,0 +1,69 @@
+<!-- templates/class_detail.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dettaglio Classi</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #343a40;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 4px solid #007bff;
+        }
+        main {
+            margin: 20px auto;
+            max-width: 800px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: center;
+        }
+        .btn {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Dettaglio Classi per {{ academic_year }}</h1>
+</header>
+
+<main>
+    <table class="table table-bordered table-hover">
+        <thead class="thead-dark">
+            <tr>
+                <th>Anno</th>
+                <th>Sezione</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for class in classes %}
+            <tr>
+                <td>{{ class[0] }}</td>
+                <td>{{ class[1] }}</td>
+                <td>
+                    <a href="{{ url_for('admin.students_in_class', academic_year=academic_year, anno=class[0], sezione=class[1]) }}" class="btn btn-primary">Visualizza Studenti</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-secondary">Torna al Pannello di Controllo</a>
+</main>
+
+</body>
+</html>

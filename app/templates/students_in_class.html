@@ -1,0 +1,96 @@
+<!-- templates/students_in_class.html -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studenti nella Classe</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #343a40;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 4px solid #007bff;
+        }
+        main {
+            margin: 20px auto;
+            max-width: 800px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Studenti in {{ academic_year }} - {{ anno }} {{ sezione }}</h1>
+</header>
+
+<main>
+    <h2>Studenti nella Classe</h2>
+    <table>
+        <tr>
+            <th>Username</th>
+            <th>Nome</th>
+            <th>Cognome</th>
+            <th>Azioni</th>
+        </tr>
+        {% for student in students %}
+        <tr>
+            <td>{{ student[0] }}</td>
+            <td>{{ student[1] }}</td>
+            <td>{{ student[2] }}</td>
+            <td>
+                <form method="POST" class="d-inline">
+                    <input type="hidden" name="remove_student_username" value="{{ student[0] }}">
+                    <button type="submit" name="remove_student" class="btn btn-danger">Rimuovi</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Aggiungi Studente alla Classe</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="student_username">Seleziona Studente:</label>
+            <select name="student_username" id="student_username" class="form-control" required>
+                {% for student in available_students %}
+                    <option value="{{ student[0] }}">{{ student[1] }} {{ student[2] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" name="add_student" class="btn btn-primary">Aggiungi Studente</button>
+    </form>
+    
+    <a href="{{ url_for('admin.class_detail', academic_year=academic_year) }}" class="btn btn-secondary">Torna alle Classi</a>
+</main>
+
+</body>
+</html>

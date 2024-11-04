@@ -6,11 +6,19 @@ def get_user_type(username):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT 'professore' as type FROM professore WHERE username = %s UNION ALL SELECT 'alunno' as type FROM alunno WHERE username = %s", (username, username))
+    cursor.execute("""
+        SELECT 'professore' AS type FROM professore WHERE username = %s
+        UNION ALL
+        SELECT 'alunno' AS type FROM alunno WHERE username = %s
+        UNION ALL
+        SELECT 'amministratore' AS type FROM amministratore WHERE username = %s
+    """, (username, username, username))
+    
     result = cursor.fetchone()
     
     conn.close()
     return result['type'] if result else None
+
 
 
 def get_active_exam_session(cursor):

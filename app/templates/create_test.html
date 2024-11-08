@@ -29,12 +29,42 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             background: #f9f9f9;
+            display: flex;
+            align-items: center;
+        }
+        .question-number {
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            color: #333;
+            text-align: center;
+            line-height: 50px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-right: 20px;
+        }
+        .question-text-container {
+            flex-grow: 1;
         }
         .option-container {
             margin-left: 20px;
         }
         .option {
+            display: flex;
+            align-items: center;
             margin: 5px 0;
+        }
+        .option textarea {
+            flex-grow: 1;
+            resize: both;
+            min-width: 200px;
+            max-width: 100%;
+            height: auto;
+            padding: 5px;
+        }
+        .option input[type="checkbox"] {
+            margin-left: 10px;
         }
         button {
             padding: 10px 15px;
@@ -56,41 +86,40 @@
         }
     </style>
     <script>
-function addQuestion() {
-    const questionsContainer = document.getElementById('questions-container');
-    
-    // Imposta l'indice della domanda controllando il numero totale di contenitori di domande più 1
-    const questionIndex = questionsContainer.getElementsByClassName('question-container').length + 1;
+    function addQuestion() {
+        const questionsContainer = document.getElementById('questions-container');
+        const questionIndex = questionsContainer.getElementsByClassName('question-container').length; // Start from 0
+        const questionDiv = document.createElement('div');
+        questionDiv.className = 'question-container';
+        questionDiv.innerHTML = `
+            <div class="question-number">${questionIndex + 1}</div> <!-- Display question number as 1-indexed for clarity -->
+            <div class="question-text-container">
+                <label for="question-text-${questionIndex}">Testo della Domanda:</label>
+                <textarea id="question-text-${questionIndex}" name="questions[${questionIndex}][text]" required></textarea>
+                <div class="option-container" id="options-container-${questionIndex}">
+                    <h4>Opzioni</h4>
+                </div>
+                <button type="button" onclick="addOption(${questionIndex})">Aggiungi Opzione</button>
+                <button type="button" class="remove-question" onclick="removeQuestion(this)">Rimuovi Domanda</button>
+            </div>
+        `;
+        questionsContainer.appendChild(questionDiv);
+    }
 
-    const questionDiv = document.createElement('div');
-    questionDiv.className = 'question-container';
-    questionDiv.innerHTML = `
-        <label for="question-text-${questionIndex}">Testo della Domanda:</label>
-        <input type="text" id="question-text-${questionIndex}" name="questions[${questionIndex}][text]" required>
-        <div class="option-container" id="options-container-${questionIndex}">
-            <h4>Opzioni</h4>
-        </div>
-        <button type="button" onclick="addOption(${questionIndex})">Aggiungi Opzione</button>
-        <button type="button" class="remove-question" onclick="removeQuestion(this)">Rimuovi Domanda</button>
-    `;
-    questionsContainer.appendChild(questionDiv);
-}
+    function addOption(questionIndex) {
+        const optionsContainer = document.getElementById(`options-container-${questionIndex}`);
+        const optionIndex = optionsContainer.getElementsByClassName('option').length; // Start from 0
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'option';
+        optionDiv.innerHTML = `
+            <label for="option-text-${questionIndex}-${optionIndex}">Opzione:</label>
+            <textarea id="option-text-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][text]" required></textarea>
+            <input type="checkbox" id="correct-option-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][correct]" value="1"> Corretta
+            <button type="button" class="remove-option" onclick="removeOption(this)">Rimuovi Opzione</button>
+        `;
+        optionsContainer.appendChild(optionDiv);
+    }
 
-
-        function addOption(questionIndex) {
-            const optionsContainer = document.getElementById(`options-container-${questionIndex}`);
-            const optionIndex = optionsContainer.children.length;
-
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'option';
-            optionDiv.innerHTML = `
-                <label for="option-text-${questionIndex}-${optionIndex}">Opzione:</label>
-                <input type="text" id="option-text-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][text]" required>
-                <input type="checkbox" id="correct-option-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][correct]" value="1"> Corretta
-                <button type="button" class="remove-option" onclick="removeOption(this)">Rimuovi Opzione</button>
-            `;
-            optionsContainer.appendChild(optionDiv);
-        }
 
         function removeQuestion(button) {
             button.closest('.question-container').remove();
@@ -100,31 +129,31 @@ function addQuestion() {
             button.closest('.option').remove();
         }
 
-        // Funzione per popolare le domande esistenti
         function populateExistingQuestions(questions) {
             questions.forEach((question, questionIndex) => {
                 const questionsContainer = document.getElementById('questions-container');
                 const questionDiv = document.createElement('div');
                 questionDiv.className = 'question-container';
                 questionDiv.innerHTML = `
-                    <label for="question-text-${questionIndex}">Testo della Domanda:</label>
-                    <input type="text" id="question-text-${questionIndex}" name="questions[${questionIndex}][text]" required value="${question.text}">
-                    <div class="option-container" id="options-container-${questionIndex}">
-                        <h4>Opzioni</h4>
+                    <div class="question-number">${questionIndex + 1}</div>
+                    <div class="question-text-container">
+                        <label for="question-text-${questionIndex}">Testo della Domanda:</label>
+                        <textarea id="question-text-${questionIndex}" name="questions[${questionIndex}][text]" required>${question.text}</textarea>
+                        <div class="option-container" id="options-container-${questionIndex}">
+                            <h4>Opzioni</h4>
+                        </div>
+                        <button type="button" onclick="addOption(${questionIndex})">Aggiungi Opzione</button>
+                        <button type="button" class="remove-question" onclick="removeQuestion(this)">Rimuovi Domanda</button>
                     </div>
-                    <button type="button" onclick="addOption(${questionIndex})">Aggiungi Opzione</button>
-                    <button type="button" class="remove-question" onclick="removeQuestion(this)">Rimuovi Domanda</button>
                 `;
                 questionsContainer.appendChild(questionDiv);
-
-                // Popola le opzioni per ogni domanda
                 question.options.forEach((option, optionIndex) => {
                     const optionsContainer = document.getElementById(`options-container-${questionIndex}`);
                     const optionDiv = document.createElement('div');
                     optionDiv.className = 'option';
                     optionDiv.innerHTML = `
                         <label for="option-text-${questionIndex}-${optionIndex}">Opzione:</label>
-                        <input type="text" id="option-text-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][text]" required value="${option.text}">
+                        <textarea id="option-text-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][text]" required>${option.text}</textarea>
                         <input type="checkbox" id="correct-option-${questionIndex}-${optionIndex}" name="questions[${questionIndex}][options][${optionIndex}][correct]" value="1" ${option.correct ? 'checked' : ''}> Corretta
                         <button type="button" class="remove-option" onclick="removeOption(this)">Rimuovi Opzione</button>
                     `;
@@ -137,10 +166,10 @@ function addQuestion() {
 <body>
     <h2>Crea un Nuovo Test</h2>
     <div class="form-container">
-        <form id="create-test-form" action="{{ url_for('professor.create_test') }}" method="POST">
+        <form id="create-test-form" action="{{ url_for('professor.create_test', test_id=test_id) }}" method="POST">
             <div>
                 <label for="test-name">Nome del Test:</label>
-                <input type="text" id="test-name" name="test_name" required value="{{ test_name or '' }}">
+                <textarea id="test-name" name="test_name" required>{{ test_name or '' }}</textarea>
             </div>
             <div>
                 <label for="test-description">Descrizione del Test:</label>
@@ -148,16 +177,14 @@ function addQuestion() {
             </div>            
             <div id="questions-container">
                 <h3>Domande</h3>
-                <!-- Le domande esistenti verranno popolate qui -->
                 <script>
-                    // Chiama la funzione per popolare le domande al caricamento della pagina
                     const existingQuestions = {{ questions|tojson }};
                     populateExistingQuestions(existingQuestions);
                 </script>
             </div>
             <button type="button" onclick="addQuestion()">Aggiungi Domanda</button>
             <br><br>
-            <button type="submit">Crea Test</button>
+            <button type="submit">{{ 'Crea Test' if test_id is none else 'Aggiorna Test' }}</button>
         </form>
     </div>
 </body>

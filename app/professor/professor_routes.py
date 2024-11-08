@@ -70,11 +70,11 @@ def create_test(test_id):
         questions = []
         for key in request.form:
             if key.startswith('questions['):
-                index = int(key.split('[')[1].replace(']', '')) - 1  # Extract the question index
+                index = int(key.split('[')[1].replace(']', ''))  # Extract the question index
                 if 'text' in key and 'options' not in key:
                     questions.append({'text': request.form[key], 'options': []})
                 elif 'options' in key:
-                    option_index = int(key.split('[')[3].replace(']', '')) - 1  # Extract the option index
+                    option_index = int(key.split('[')[3].replace(']', ''))  # Extract the option index
                     if 'text' in key:
                         questions[index]['options'].append({'text': request.form[key], 'correct': 0})  # Default correct value
                     elif 'correct' in key:
@@ -119,7 +119,7 @@ def create_test(test_id):
 
         return render_template('create_test.html', test_name=test_name, test_description=test_description, questions=questions, test_id=test_id)
 
-    return render_template('create_test.html', test_name=None, test_description=None, questions=[])
+    return render_template('create_test.html', test_name=None, test_description=None, questions=[], test_id=None)
 
 
 
@@ -204,3 +204,12 @@ def stop_exam_session(test_id):
 
     return redirect(url_for('professor.professor_tests'))
 
+
+@professor_bp.route('/delete_test/<int:test_id>', methods=['DELETE'])
+def delete_test(test_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM test WHERE id = %s", (test_id,))
+    conn.commit()
+    conn.close()
+    return '', 204  # No content, as the test is deleted

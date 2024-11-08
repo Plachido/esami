@@ -50,7 +50,6 @@
     <div class="container mt-5">
         <div class="header">
             <h2>I tuoi Test</h2>
-            <!-- Pulsante per creare un nuovo esame, allineato a destra -->
             <a href="create_test" class="btn btn-success">Crea Nuovo Esame</a>
         </div>
         <div class="list-group">
@@ -58,13 +57,8 @@
             <div class="test-item d-flex justify-content-between align-items-start">
                 <div class="flex-grow-1">
                     <h5>{{ test.nome }}</h5>
-                    
-                    <!-- Controlla se c'è un codice attivo per questo test -->
                     {% if test.id in test_session_map %}
-                    <!-- Visualizzazione Timer -->
                     <span id="timer-{{ test.id }}" class="timer">00:00</span>
-                    
-                    <!-- Visualizzazione Codice -->
                     <div class="code-box">
                         Codice: <span id="code-{{ test.id }}">{{ test_session_map[test.id][0].code_id }}</span>
                         <button class="btn btn-sm btn-outline-info ml-2" onclick="copyCode({{ test.id }})">Copia</button>
@@ -72,20 +66,21 @@
                     {% endif %}
                 </div>
                 <div>
-                    <!-- Mostra il pulsante Inizia Esame solo se non c'è una sessione attiva -->
                     {% if test.id not in test_session_map %}
                     <button class="btn btn-primary mr-2" data-toggle="modal" data-target="#startExamModal" onclick="setTestId({{ test.id }})">
                         Inizia Esame
                     </button>
                     {% else %}
-                    <!-- Mostra il pulsante Ferma se c'è una sessione attiva -->
                     <button class="btn btn-danger mr-2" id="stop-button-{{ test.id }}" onclick="stopExamSession({{ test.id }})">
                         Ferma
                     </button>
                     {% endif %}
-                    <!-- Pulsante Aggiorna -->
                     <button class="btn btn-warning" onclick="updateTest({{ test.id }})">
                         Aggiorna
+                    </button>
+                    <!-- New Delete button -->
+                    <button class="btn btn-danger ml-2" onclick="confirmDelete({{ test.id }})">
+                        Elimina
                     </button>
                 </div>
             </div>
@@ -93,7 +88,6 @@
         </div>
     </div>
 
-<!-- Modale per Configurazione Esame -->
 <div class="modal" id="startExamModal">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -120,7 +114,6 @@
 <script>
     function setTestId(testId) {
         document.getElementById("test_id").value = testId;
-        // Imposta l'azione per il modulo dinamicamente
         document.getElementById("examForm").action = `/professor/start_exam_session/${testId}`;
     }
     
@@ -129,7 +122,7 @@
             .then(response => {
                 if (response.ok) {
                     alert("Sessione d'esame fermata.");
-                    location.reload();  // Ricarica per aggiornare la visibilità dei pulsanti
+                    location.reload();
                 } else {
                     alert("Impossibile fermare la sessione d'esame.");
                 }
@@ -146,7 +139,7 @@
     function startTimers(testSessionMap) {
         for (const testId in testSessionMap) {
             const sessions = testSessionMap[testId];
-            let timeLeft = Math.floor(sessions[0].remaining_time); // Tempo rimanente in secondi
+            let timeLeft = Math.floor(sessions[0].remaining_time);
             let timerElement = document.getElementById(`timer-${testId}`);
 
             function updateTimer() {
@@ -159,25 +152,35 @@
                 timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 timeLeft--;
 
-                // Usa setTimeout per chiamare updateTimer di nuovo dopo 1 secondo
                 setTimeout(updateTimer, 1000);
             }
 
-            // Inizia il timer
             updateTimer();
         }
     }
 
-    // Inizia i timer al caricamento della pagina
     window.onload = function() {
         const testSessionMap = {{ test_session_map | tojson }};
         startTimers(testSessionMap);
     };
 
     function updateTest(testId) {
-        // Reindirizza o apre un modale per aggiornare il test con l'id specificato
-        // Ad esempio, potresti aprire un modale o navigare a una pagina di aggiornamento
-        window.location.href = `/professor/create_test/${testId}`; // Regola l'URL come necessario
+        window.location.href = `/professor/create_test/${testId}`;
+    }
+
+    function confirmDelete(testId) {
+        const confirmDeletion = confirm("Sei sicuro di voler eliminare l'esame?");
+        if (confirmDeletion) {
+            fetch(`/professor/delete_test/${testId}`, { method: 'DELETE' })
+                .then(response => {
+                    if (response.ok) {
+                        alert("Esame eliminato.");
+                        location.reload();  // Ricarica la pagina per aggiornare la lista
+                    } else {
+                        alert("Errore nell'eliminazione dell'esame.");
+                    }
+                });
+        }
     }
 </script>
 

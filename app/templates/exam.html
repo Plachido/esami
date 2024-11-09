@@ -79,6 +79,15 @@
             margin-bottom: 20px;
         }
     </style>
+    <!-- MathJax for LaTeX support -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
 </head>
 <body>
     <div class="question-container">
@@ -88,7 +97,7 @@
             <div class="options">
                 {% for option in question['options'] %}
                 <label>
-                    <input type="radio" name="answer" value="{{ option }}" {% if option == selected_answer %} checked {% endif %}>
+                    <input type="radio" name="answer" value="{{ option }}" {% if option == selected_answer %} checked {% endif %} onclick="toggleRadio(this)">
                     {{ option }}
                 </label>
                 {% endfor %}
@@ -110,26 +119,32 @@
     <div id="timer"></div>
 
     <script>
-        // Configurazione timer
-        let remainingTime = {{ session['remaining_time'] | safe }}; // Tempo in secondi
+        // Track the last selected radio button
+        let lastSelectedRadio = null;
+
+        function toggleRadio(radio) {
+            if (lastSelectedRadio === radio) {
+                radio.checked = false;
+                lastSelectedRadio = null;
+            } else {
+                lastSelectedRadio = radio;
+            }
+        }
 
         async function startTimer() {
             const timerDisplay = document.getElementById('timer');
-
             async function updateTimer() {
                 if (remainingTime <= 0) {
-                    clearInterval(timerInterval); // Ferma il timer quando il tempo è scaduto
-                    await submitExam(); // Invia automaticamente quando il tempo è scaduto
+                    clearInterval(timerInterval);
+                    await submitExam();
                 } else {
-                    // Visualizza il tempo rimanente in minuti e secondi
                     let minutes = Math.floor(remainingTime / 60);
                     let seconds = remainingTime % 60;
                     timerDisplay.textContent = `Tempo rimasto: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
                     remainingTime--;
                 }
             }
-
-            const timerInterval = setInterval(updateTimer, 1000); // Aggiorna ogni secondo
+            const timerInterval = setInterval(updateTimer, 1000);
         }
 
         async function submitExam() {
@@ -140,17 +155,18 @@
                 }
             });
             const data = await response.json();
-            alert(data.message); // Notifica all'utente
-            window.location.href = "{{ url_for('student.exam_results') }}"; // Reindirizza ai risultati
+            alert(data.message);
+            window.location.href = "{{ url_for('student.exam_results') }}";
         }
 
         document.addEventListener("DOMContentLoaded", function() {
             startTimer();
+            MathJax.typeset(); // Render any LaTeX expressions on page load
         });
 
         async function reviewExam(event) {
-            event.preventDefault(); // Previene l'azione predefinita del pulsante
-            const response = await submitAnswer(); // Invia la risposta prima di rivedere
+            event.preventDefault();
+            const response = await submitAnswer();
             if (response.ok) {
                 window.location.href = '{{ url_for('student.review') }}';
             } else {
@@ -159,11 +175,9 @@
         }
 
         async function submitAnswer() {
-            // Ottieni i dati del modulo
             let form = document.getElementById('question-form');
             let formData = new FormData(form);
 
-            // Invia la risposta al server e aspetta la risposta
             return await fetch('/student/submit_answer', {
                 method: 'POST',
                 body: formData
@@ -171,8 +185,7 @@
         }
 
         async function navigate(event, direction) {
-            event.preventDefault(); // Previene qualsiasi azione predefinita del modulo
-
+            event.preventDefault();
             let form = document.getElementById('question-form');
             let formData = new FormData(form);
             formData.append(direction === 1 ? 'next_index' : 'prev_index', {{ index }} + direction);
@@ -189,16 +202,15 @@
             }
         }
 
-        // Controlla lo stato attivo ogni 2 minuti
         setInterval(() => {
             fetch('student/check_active_status')
                 .then(response => response.json())
                 .then(data => {
                     if (!data.active) {
-                        submitExam(); // Forza l'invio se l'esame è chiuso dal professore
+                        submitExam();
                     }
                 });
-        }, 120000); // 2 minuti
+        }, 120000);
     </script>
 </body>
 </html>

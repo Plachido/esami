@@ -57,7 +57,6 @@ def enter_test_code():
                 submission = cursor.fetchone()
 
                 if submission:
-                    flash('Test already submitted. You cannot retake this test.')
                     return redirect(url_for('auth.index'))
 
                 # Insert a new record into test_alunno
@@ -113,6 +112,7 @@ def enter_test_code():
                 session.modified = True
                 return redirect(url_for('student.exam'))
             else:
+                alert("Sessione d'esame fermata.");
                 return jsonify({"message": "Invalid, inactive, or expired test code."}), 400
         except Exception as e:
             print(f"Error: {e}")
@@ -297,4 +297,5 @@ def submit_exam():
     session.pop('answers', None)
     session.pop('remaining_time', None)
     
-    return jsonify({"message": "Exam submitted successfully"})
+    #redirect to enter_test_code
+    return redirect(url_for('student.enter_test_code'))

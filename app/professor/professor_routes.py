@@ -94,7 +94,6 @@ def create_test(test_id):
                                (option_text, is_correct, question_id))
 
         conn.commit()
-        flash('Test saved successfully with questions and options!')
         return redirect(url_for('professor.professor_tests'))
 
     # If GET, fetch existing test and questions
@@ -148,7 +147,6 @@ def add_question(test_id):
                                (option_text, is_correct, question_id))
 
         conn.commit()
-        flash('Question and options added successfully!')
         return redirect(url_for('professor.professor_tests'))
 
     return render_template('add_question.html', test_id=test_id)
@@ -175,12 +173,10 @@ def start_exam_session(test_id):
         conn.commit()
         code_id = cursor.lastrowid  # Get the ID of the newly created code
 
-        flash(f'Exam session started! Code: {code_id}')  # Provide the code to the professor
         #return {'code': code_id, 'validity_time': validity_time, 'exam_duration': exam_duration}
     
     except Exception as e:
         print(f"Error starting exam session: {e}")
-        flash('An error occurred while starting the exam session.')
 
     finally:
         conn.close()
@@ -195,10 +191,8 @@ def stop_exam_session(test_id):
     try:
         cursor.execute("UPDATE codice SET active = 0 WHERE test_id = %s", (test_id,))
         conn.commit()
-        flash('Exam session ended successfully!')
     except Exception as e:
         print(f"Error stopping exam session: {e}")
-        flash('An error occurred while stopping the exam session.')
     finally:
         conn.close()
 

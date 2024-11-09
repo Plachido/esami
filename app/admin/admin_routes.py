@@ -47,7 +47,6 @@ def add_student():
             (username, nome, cognome, password)
         )
         conn.commit()
-    flash('Student added successfully!')
     return redirect(url_for('admin.manage_students'))
 
 @admin_bp.route('/delete_student/<student_username>', methods=['POST'])
@@ -57,7 +56,6 @@ def delete_student(student_username):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM alunno WHERE username = %s", (student_username,))
         conn.commit()
-    flash('Student deleted successfully!')
     return redirect(url_for('admin.manage_students'))
 
 
@@ -77,7 +75,6 @@ def edit_student(student_username):
                 (nome, cognome, password, student_username)
             )
             conn.commit()
-            flash('Student updated successfully!')
             return redirect(url_for('admin.manage_students'))
 
         cursor.execute("SELECT * FROM alunno WHERE username = %s", (student_username,))
@@ -229,7 +226,6 @@ def add_student():
             (username, nome, cognome, password)
         )
         conn.commit()
-    flash('Student added successfully!')
     return redirect(url_for('admin.manage_students'))
 
 @admin_bp.route('/delete_student/<student_username>', methods=['POST'])
@@ -239,7 +235,6 @@ def delete_student(student_username):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM alunno WHERE username = %s", (student_username,))
         conn.commit()
-    flash('Student deleted successfully!')
     return redirect(url_for('admin.manage_students'))
 
 @admin_bp.route('/edit_student/<student_username>', methods=['GET', 'POST'])
@@ -257,7 +252,6 @@ def edit_student(student_username):
                 (nome, cognome, password, student_username)
             )
             conn.commit()
-            flash('Student updated successfully!')
             return redirect(url_for('admin.manage_students'))
 
         cursor.execute("SELECT * FROM alunno WHERE username = %s", (student_username,))
@@ -288,7 +282,6 @@ def add_professor():
             (username, nome, cognome, password)
         )
         conn.commit()
-    flash('Professor added successfully!')
     return redirect(url_for('admin.manage_professors'))
 
 @admin_bp.route('/delete_professor/<professor_username>', methods=['POST'])
@@ -298,7 +291,6 @@ def delete_professor(professor_username):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM professore WHERE username = %s", (professor_username,))
         conn.commit()
-    flash('Professor deleted successfully!')
     return redirect(url_for('admin.manage_professors'))
 
 @admin_bp.route('/edit_professor/<professor_username>', methods=['GET', 'POST'])
@@ -316,7 +308,6 @@ def edit_professor(professor_username):
                 (nome, cognome, password, professor_username)
             )
             conn.commit()
-            flash('Professor updated successfully!')
             return redirect(url_for('admin.manage_professors'))
 
         cursor.execute("SELECT * FROM professore WHERE username = %s", (professor_username,))
@@ -446,14 +437,12 @@ def students_in_class(academic_year, anno, sezione):
             cursor.execute("UPDATE alunno SET anno_scolastico = %s, anno = %s, sezione = %s WHERE username = %s",
                            (academic_year, anno, sezione, student_username))
             conn.commit()
-            flash(f'Student {student_username} added to the class!', 'success')
 
         if 'remove_student' in request.form:
             student_username = request.form.get('remove_student_username')
             cursor.execute("UPDATE alunno SET anno_scolastico = NULL, anno = NULL, sezione = NULL WHERE username = %s",
                            (student_username,))
             conn.commit()
-            flash(f'Student {student_username} removed from the class!', 'success')
 
     # Fetch students in the class
     cursor.execute("SELECT username, nome, cognome FROM alunno WHERE anno_scolastico = %s AND anno = %s AND sezione = %s", 

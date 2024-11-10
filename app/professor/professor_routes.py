@@ -158,7 +158,6 @@ def start_exam_session(test_id):
     if 'username' not in session or session['user_type'] != 'professore':
         return redirect(url_for('auth.index'))
 
-    validity_time = int(request.form.get('validity_time', 5))  # Default to 5 minutes
     exam_duration = int(request.form.get('exam_duration', 60))  # Default to 60 minutes from frontend
 
     conn = get_db_connection()
@@ -168,7 +167,7 @@ def start_exam_session(test_id):
     try:
         cursor.execute(
             "INSERT INTO codice (data_generazione, test_id, validity_time, exam_duration) VALUES (%s, %s, %s, %s)",
-            (datetime.datetime.now(), test_id, validity_time, exam_duration)
+            (datetime.datetime.now(), test_id, exam_duration, exam_duration)
         )
         conn.commit()
         code_id = cursor.lastrowid  # Get the ID of the newly created code

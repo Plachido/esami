@@ -43,6 +43,22 @@
             align-items: center;
             margin-bottom: 20px;
         }
+        .logout-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    background-color: #dc3545;
+    color: white;
+    cursor: pointer;
+    text-decoration: none;
+}
+.logout-button:hover {
+    background-color: #c82333;
+}
+
     </style>
 </head>
 <body>
@@ -51,6 +67,7 @@
         <div class="header">
             <h2>I tuoi Test</h2>
             <a href="create_test" class="btn btn-success">Crea Nuovo Esame</a>
+            <a href="{{ url_for('auth.logout') }}" class="logout-button">Disconnettiti</a>
         </div>
         <div class="list-group">
             {% for test in tests %}

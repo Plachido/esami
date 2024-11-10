@@ -5,7 +5,7 @@ import random  # Make sure to import random for shuffling
 from datetime import datetime, timedelta  # Import datetime for submission time
 student_bp = Blueprint('student', __name__)
 # student/student_routes.py
-
+import json
 from flask import Blueprint, session, redirect, url_for, render_template, request, flash, jsonify
 from database import get_db_connection
 import random
@@ -223,11 +223,43 @@ def exam():
     question_index = int(request.args.get('q', 0))
     if question_index < len(session['questions']):
         question = session['questions'][question_index]
-        return render_template('exam.html', question=question, index=question_index, total=len(session['questions']), selected_answer=session['answers'][question_index])
+        return render_template('exam.html', question=question, index=question_index, total=len(session['questions']), selected_answer=session['answers'][question_index]) #TODO: add code id
     else:
         return redirect(url_for('student.exam_results'))
 
-# The rest of your routes, including submit_answer and exam_results, remain the same.
+
+@student_bp.route('/exam_time', methods=['GET'])
+def exam_time():
+    session_code = session.get('session_code')  # Or fetch from session or URL
+    if not session_code:
+        return jsonify({'error': 'Test ID not found'}), 400
+    
+    # Query the database for the exam details
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        SELECT data_generazione, exam_duration
+        FROM codice
+        WHERE id = %s AND active = 1
+    """, (session_code,))
+    
+    exam_info = cursor.fetchone()
+    conn.close()
+    
+    if not exam_info:
+        return jsonify({'error': 'Exam not found'}), 404
+
+    # Extract data and calculate the remaining time
+    exam_start_time = exam_info[0]
+    exam_duration = exam_info[1]*60  # Duration in seconds
+
+    return jsonify({
+        'start_time': exam_start_time.isoformat(),  # ISO format to send to frontend
+        'exam_duration': exam_duration
+    })
+
+
 
 
 @student_bp.route('/review')
@@ -240,26 +272,6 @@ def review():
     
     return render_template('review.html', questions=questions, answers=answers)
 
-
-@student_bp.route('/exam_results')
-def exam_results():
-    if 'username' not in session or 'questions' not in session:
-        return redirect(url_for('auth.index'))
-
-    questions = session['questions']
-    answers = session['answers']
-    results = []
-
-    # Evaluate the answers
-    for question, user_answer in zip(questions, answers):
-        correct_options = [option['vero'] for option in question['options'] if option['vero'] == 1]
-        results.append({
-            'question': question['testo'],
-            'user_answer': user_answer,
-            'correct': user_answer in correct_options
-        })
-
-    return render_template('exam_results.html', results=results)
 
 @student_bp.route('/check_active_status')
 def check_active_status():
@@ -298,4 +310,4 @@ def submit_exam():
     session.pop('remaining_time', None)
     
     #redirect to enter_test_code
-    return redirect(url_for('student.enter_test_code'))
+    return json.dumps({'success':True}), 200, {'ContentType':'application/json'} #redirect(url_for('student.enter_test_code'))

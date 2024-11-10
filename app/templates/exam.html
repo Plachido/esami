@@ -79,15 +79,6 @@
             margin-bottom: 20px;
         }
     </style>
-    <!-- MathJax for LaTeX support -->
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script>
-        window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
-            svg: { fontCache: 'global' }
-        };
-    </script>
 </head>
 <body>
     <div class="question-container">
@@ -119,7 +110,6 @@
     <div id="timer"></div>
 
     <script>
-        // Track the last selected radio button
         let lastSelectedRadio = null;
 
         function toggleRadio(radio) {
@@ -131,8 +121,40 @@
             }
         }
 
-        async function startTimer() {
+        let remainingTime = 0; // Time left in seconds
+
+        async function fetchExamTime() {
+            try {
+                const response = await fetch('exam_time');
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error("Error fetching exam time:", data.error);
+                    return;
+                }
+
+                const examStartTime = new Date(data.start_time);  // Start time from backend
+                const examDuration = data.exam_duration;          // Duration from backend
+
+                const currentTime = new Date();  // Current time
+                const elapsedTime = Math.floor((currentTime - examStartTime) / 1000);  // Time passed in seconds
+
+                remainingTime = examDuration - elapsedTime; // Calculate remaining time
+
+                if (remainingTime < 0) {
+                    remainingTime = 0;  // Prevent negative time
+                }
+
+                startTimer();  // Start the countdown
+
+            } catch (error) {
+                console.error("Error fetching exam time:", error);
+            }
+        }
+
+        function startTimer() {
             const timerDisplay = document.getElementById('timer');
+            
             async function updateTimer() {
                 if (remainingTime <= 0) {
                     clearInterval(timerInterval);
@@ -142,27 +164,35 @@
                     let seconds = remainingTime % 60;
                     timerDisplay.textContent = `Tempo rimasto: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
                     remainingTime--;
+                    localStorage.setItem('remainingTime', remainingTime); // Save the remaining time in localStorage
                 }
             }
+
             const timerInterval = setInterval(updateTimer, 1000);
         }
 
+        document.addEventListener("DOMContentLoaded", function() {
+            // Initialize the timer when the page loads
+            fetchExamTime();
+        });
+
         async function submitExam() {
-            const response = await fetch('/submit_exam', {
+            const response = await fetch('submit_exam', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-            const data = await response.json();
-            alert(data.message);
-            window.location.href = "{{ url_for('student.exam_results') }}";
+            if (response.ok) {
+                window.location.href = '{{ url_for('student.enter_test_code') }}'; // Redirect as per the backend
+            } else {
+                alert(data.message); // If no URL, show a message
+            }
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            startTimer();
-            MathJax.typeset(); // Render any LaTeX expressions on page load
-        });
+
+
+
 
         async function reviewExam(event) {
             event.preventDefault();
@@ -203,7 +233,7 @@
         }
 
         setInterval(() => {
-            fetch('student/check_active_status')
+            fetch('check_active_status')
                 .then(response => response.json())
                 .then(data => {
                     if (!data.active) {

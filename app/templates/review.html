@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rivedi le Tue Risposte</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -55,12 +54,18 @@
 <body>
     <div class="review-container">
         <h2>Rivedi le Tue Risposte</h2>
-        <form action="/student/submit_exam" method="POST">
+        <form id="examForm">
             <ul>
             {% for question in questions %}
                 <li>
-                    <strong>{{ question['question'] | safe }}</strong><br>
-                    La tua risposta: {{ answers[loop.index0] | safe or 'Nessuna risposta' }}<br>
+                    <strong>{{ question['question'] }}</strong><br>
+                    La tua risposta: 
+                    {% if answers[loop.index0] %}
+                        <span class="latex">{{ answers[loop.index0] }}</span>
+                    {% else %}
+                        Nessuna risposta
+                    {% endif %}
+                    <br>
                     Valore: {{ question['value'] }} punti<br>
                     <a href="{{ url_for('student.exam', q=loop.index0) }}">Cambia Risposta</a>
                 </li>
@@ -71,8 +76,40 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            MathJax.typeset();
+        // Re-run MathJax to render LaTeX formulas with single $ support
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$']],
+            }
+        });
+
+        window.onload = function() {
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        };
+
+        // Handle form submission with fetch
+        document.getElementById('examForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevent the form from submitting the traditional way
+            
+            const formData = new FormData(this);
+            
+            fetch('/student/submit_exam', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{{ url_for('student.enter_test_code') }}'; // Redirect on success
+                } else {
+                    alert('Errore nel submit dell\'esame. Riprova.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore nel submit dell\'esame. Riprova.');
+            });
         });
     </script>
 </body>

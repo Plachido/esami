@@ -79,11 +79,29 @@
             margin-bottom: 20px;
         }
     </style>
+    <!-- Include MathJax library -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+    <script>
+        // Configure MathJax to render LaTeX formulas with single $ and double $$ for inline and block math
+        MathJax.Hub.Config({
+            tex2jax: {
+                inlineMath: [['$', '$']],  // For inline math
+                displayMath: [['$$', '$$']] // For block math
+            }
+        });
+
+        // Ensure MathJax renders after page load
+        window.onload = function() {
+            MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        };
+    </script>
 </head>
 <body>
     <div class="question-container">
         <h2>Domanda {{ index + 1 }} di {{ total }}</h2>
         <p>{{ question['question'] }}</p>
+        <p>Inline math example: $x^2 + y^2 = z^2$</p>
+        <p>Block math example: $$E = mc^2$$</p>
         <form id="question-form">
             <div class="options">
                 {% for option in question['options'] %}
@@ -189,10 +207,6 @@
                 alert(data.message); // If no URL, show a message
             }
         }
-
-
-
-
 
         async function reviewExam(event) {
             event.preventDefault();

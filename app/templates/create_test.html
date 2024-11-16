@@ -122,8 +122,42 @@
 
 
         function removeQuestion(button) {
-            button.closest('.question-container').remove();
-        }
+        // Remove the selected question
+        const questionContainer = button.closest('.question-container');
+        questionContainer.remove();
+
+        // Re-index remaining questions
+        const questionsContainer = document.getElementById('questions-container');
+        const questionContainers = questionsContainer.getElementsByClassName('question-container');
+
+        Array.from(questionContainers).forEach((questionDiv, newIndex) => {
+            // Update the question number display
+            questionDiv.querySelector('.question-number').textContent = newIndex + 1;
+
+            // Update the question text area's id and name attributes
+            const questionTextArea = questionDiv.querySelector('textarea[name^="questions["]');
+            questionTextArea.id = `question-text-${newIndex}`;
+            questionTextArea.name = `questions[${newIndex}][text]`;
+
+            // Update options container id
+            const optionsContainer = questionDiv.querySelector('.option-container');
+            optionsContainer.id = `options-container-${newIndex}`;
+
+            // Update option fields inside each question
+            const options = optionsContainer.getElementsByClassName('option');
+            Array.from(options).forEach((optionDiv, optionIndex) => {
+                const optionTextArea = optionDiv.querySelector('textarea');
+                const checkbox = optionDiv.querySelector('input[type="checkbox"]');
+
+                // Update option textarea and checkbox ids and names
+                optionTextArea.id = `option-text-${newIndex}-${optionIndex}`;
+                optionTextArea.name = `questions[${newIndex}][options][${optionIndex}][text]`;
+                checkbox.id = `correct-option-${newIndex}-${optionIndex}`;
+                checkbox.name = `questions[${newIndex}][options][${optionIndex}][correct]`;
+            });
+        });
+    }
+
 
         function removeOption(button) {
             button.closest('.option').remove();

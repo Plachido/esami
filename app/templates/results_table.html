@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Risultati Studenti</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Risultati Studenti</h2>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Cognome</th>
+                    <th>Risposte Corrette</th>
+                    <th>Risposte Errate</th>
+                    <th>Risposte Non Date</th>
+                    <th>Risultato</th>
+                    <th>Consegna</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in results %}
+                <tr>
+                    <td>{{ student.nome_studente }}</td>
+                    <td>{{ student.cognome_studente }}</td>
+                    <td>{{ student.risposte_corrette }}</td>
+                    <td>{{ student.risposte_errate }}</td>
+                    <td>{{ student.risposte_non_date }}</td>
+                    <td>{{ student.risultato }}</td>
+                    <td>{{ student.consegna }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Back button -->
+        <button class="btn btn-secondary" onclick="window.history.back()">Indietro</button>
+    </div>
+</body>
+</html>

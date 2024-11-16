@@ -99,6 +99,9 @@
                     <button class="btn btn-danger ml-2" onclick="confirmDelete({{ test.id }})">
                         Elimina
                     </button>
+                    <button class="btn btn-info ml-2" onclick="viewResults({{ test.id }})">
+                        Risultati
+                    </button>                    
                 </div>
             </div>
             {% endfor %}
@@ -129,6 +132,10 @@
 </div>
 
 <script>
+    function viewResults(testId) {
+    window.location.href = `/professor/results/${testId}`;
+}
+
     function setTestId(testId) {
         document.getElementById("test_id").value = testId;
         document.getElementById("examForm").action = `/professor/start_exam_session/${testId}`;

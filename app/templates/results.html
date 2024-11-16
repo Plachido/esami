@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Risultati Test</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Seleziona Anno Scolastico e Classe</h2>
+        <form method="POST">
+            <!-- Dropdown for Anno Scolastico -->
+            <div class="form-group">
+                <label for="anno_scolastico">Anno Scolastico</label>
+                <select class="form-control" id="anno_scolastico" name="anno_scolastico" required>
+                    {% for year in academic_years %}
+                    <option value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Dropdown for Anno -->
+            <div class="form-group">
+                <label for="anno">Anno</label>
+                <select class="form-control" id="anno" name="anno" required>
+                    {% for year in years %}
+                    <option value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Dropdown for Sezione -->
+            <div class="form-group">
+                <label for="sezione">Sezione</label>
+                <select class="form-control" id="sezione" name="sezione" required>
+                    {% for section in sections %}
+                    <option value="{{ section }}">{{ section }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Visualizza Risultati</button>
+        </form>
+
+        <!-- Back button -->
+        <button class="btn btn-secondary mt-3" onclick="window.history.back()">Indietro</button>
+    </div>
+</body>
+</html>

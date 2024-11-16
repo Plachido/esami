@@ -7,40 +7,6 @@ import datetime
 
 professor_bp = Blueprint('professor', __name__)
 
-@professor_bp.route('/professor_tests')
-def professor_tests():
-    if 'username' not in session or session['user_type'] != 'professore':
-        return redirect(url_for('auth.index'))
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    username = session['username']
-    cursor.execute("SELECT * FROM test WHERE professore_username = %s", (username,))
-    tests = cursor.fetchall()
-
-    active_codes = get_active_exam_session(cursor)
-    test_session_map = {}
-    current_time = datetime.datetime.now()
-
-    for code in active_codes:
-        test_id = code['test_id']
-        start_time = code['data_generazione']
-        exam_duration = code['exam_duration']
-        expiry_time = start_time + datetime.timedelta(minutes=exam_duration)
-        remaining_time = (expiry_time - current_time).total_seconds()
-
-        if test_id not in test_session_map:
-            test_session_map[test_id] = []
-
-        test_session_map[test_id].append({
-            'code_id': code['id'],
-            'remaining_time': remaining_time
-        })
-
-    conn.close()
-    return render_template('professor_tests.html', tests=tests, test_session_map=test_session_map)
-
 @professor_bp.route('/create_test/', defaults={'test_id': None}, methods=['GET', 'POST'])
 @professor_bp.route('/create_test/<int:test_id>', methods=['GET', 'POST'])
 def create_test(test_id):
@@ -152,6 +118,40 @@ def add_question(test_id):
     return render_template('add_question.html', test_id=test_id)
 
 
+@professor_bp.route('/professor_tests')
+def professor_tests():
+    if 'username' not in session or session['user_type'] != 'professore':
+        return redirect(url_for('auth.index'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    username = session['username']
+    cursor.execute("SELECT * FROM test WHERE professore_username = %s", (username,))
+    tests = cursor.fetchall()
+
+    active_codes = get_active_exam_session(cursor)
+    test_session_map = {}
+    current_time = datetime.datetime.now()
+
+    for code in active_codes:
+        test_id = code['test_id']
+        start_time = code['data_generazione']
+        exam_duration = code['exam_duration']
+        expiry_time = start_time + datetime.timedelta(minutes=exam_duration)
+        remaining_time = (expiry_time - current_time).total_seconds()
+
+        if test_id not in test_session_map:
+            test_session_map[test_id] = []
+
+        test_session_map[test_id].append({
+            'code_id': code['id'],
+            'remaining_time': remaining_time
+        })
+
+    conn.close()
+    return render_template('professor_tests.html', tests=tests, test_session_map=test_session_map)
+
 
 @professor_bp.route('/start_exam_session/<int:test_id>', methods=['POST'])
 def start_exam_session(test_id):
@@ -206,3 +206,61 @@ def delete_test(test_id):
     conn.commit()
     conn.close()
     return '', 204  # No content, as the test is deleted
+
+
+@professor_bp.route('/results/<int:test_id>', methods=['GET', 'POST'])
+def view_results(test_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    if request.method == 'GET':
+        print(test_id)
+        # Fetch academic years and classes where students submitted the exam
+        query = '''
+            SELECT DISTINCT anno_scolastico, anno, sezione
+            FROM student_grades
+            WHERE test_id = %s
+        '''
+        cursor.execute(query, (test_id,))
+        classes = cursor.fetchall()
+        unique_academic_years = sorted({cls[0] for cls in classes})
+        unique_years = sorted({cls[1] for cls in classes})
+        unique_sections = sorted({cls[2] for cls in classes})
+
+        # Pass the unique values to the template
+        return render_template('results.html', 
+                            test_id=test_id, 
+                            academic_years=unique_academic_years,
+                            years=unique_years,
+                            sections=unique_sections)
+
+    elif request.method == 'POST':
+        # Fetch selected year and class
+        year = request.form.get('anno_scolastico')
+        anno = request.form.get('anno')
+        sezione = request.form.get('sezione')
+
+        # Query results, including punteggio_massimo and submission_date
+        query = '''
+            SELECT nome_studente, cognome_studente, risposte_corrette, 
+                   risposte_errate, risposte_non_date, punteggio_massimo, submission_date
+            FROM student_grades
+            WHERE test_id = %s AND anno_scolastico = %s AND anno = %s AND sezione = %s
+        '''
+        cursor.execute(query, (test_id, year, anno, sezione))
+        results = cursor.fetchall()
+
+        # Format results, including the "Risultato" and "Consegna" columns
+        formatted_results = [
+            {
+                'nome_studente': r[0],
+                'cognome_studente': r[1],
+                'risposte_corrette': r[2],
+                'risposte_errate': r[3],
+                'risposte_non_date': r[4],
+                'risultato': f"{r[2]}/{r[5]}",  # correct/max
+                'consegna': r[6].strftime('%Y-%m-%d %H:%M:%S') if r[6] else None  # Only format if submission_date exists
+            }
+            for r in results if r[6]  # Only include students with a submission_date
+        ]
+
+        return render_template('results_table.html', results=formatted_results)

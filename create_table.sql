@@ -99,3 +99,33 @@ CREATE TABLE risposta (
 );
 
 
+
+CREATE VIEW student_grades AS
+SELECT 
+    al.nome AS nome_studente,
+    al.cognome AS cognome_studente,
+    al.anno_scolastico,
+    al.anno,
+    al.sezione,
+    cd.id AS codice_id,
+    cd.test_id AS test_id,
+    ta.submission_date AS submission_date,
+    COUNT(CASE WHEN op.vero = TRUE AND rsp.opzione_id IS NOT NULL THEN 1 END) AS risposte_corrette,
+    COUNT(CASE WHEN op.vero = FALSE AND rsp.opzione_id IS NOT NULL THEN 1 END) AS risposte_errate,
+    COUNT(dm.id) - COUNT(rsp.domanda_id) AS risposte_non_date,
+    COALESCE(SUM(CASE WHEN op.vero = TRUE THEN op.valore ELSE 0 END), 0) AS punteggio,
+    COUNT(DISTINCT rsp.domanda_id) AS punteggio_massimo
+FROM 
+    alunno al
+JOIN 
+    test_alunno ta ON al.username = ta.alunno_username
+JOIN 
+    codice cd ON ta.codice_id = cd.id
+JOIN 
+    domanda dm ON dm.test_id = cd.test_id
+LEFT JOIN 
+    risposta rsp ON rsp.alunno_username = al.username AND rsp.codice_id = cd.id AND rsp.domanda_id = dm.id
+LEFT JOIN 
+    opzione op ON rsp.opzione_id = op.id
+GROUP BY 
+    al.nome, al.cognome, al.anno_scolastico, al.anno, al.sezione, cd.id, cd.test_id, ta.submission_date;

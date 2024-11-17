@@ -49,6 +49,11 @@
             border: 1px solid #ced4da;
             border-radius: 4px;
         }
+        select {
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
         button {
             padding: 10px;
             background-color: #007bff;
@@ -76,10 +81,21 @@
 </header>
 
 <main>
-    <form action="{{ url_for('admin.edit_student', student_username=student.username) }}" method="post">
-        <input type="text" name="nome" value="{{ student.nome }}" required placeholder="Nome">
-        <input type="text" name="cognome" value="{{ student.cognome }}" required placeholder="Cognome">
-        <input type="password" name="password" placeholder="Password" required>
+    <form action="{{ url_for('admin.edit_student', student_username=student['username']) }}" method="post">
+        <input type="text" name="nome" value="{{ student['nome'] }}" required placeholder="Nome">
+        <input type="text" name="cognome" value="{{ student['cognome'] }}" required placeholder="Cognome">
+        <input type="password" name="password" value="{{ student['password'] }}" placeholder="Password" required>
+
+        <label for="class">Classe</label>
+        <select name="class" id="class" required>
+            {% for c in classes %}
+                <option value="{{ c['anno'] }}_{{ c['sezione'] }}"
+                        {% if c['anno'] == student['anno'] and c['sezione'] == student['sezione'] %}selected{% endif %}>
+                    {{ c['anno'] }} - {{ c['sezione'] }}
+                </option>
+            {% endfor %}
+        </select>
+
         <button type="submit">Aggiorna Studente</button>
     </form>
 </main>

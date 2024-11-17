@@ -42,6 +42,7 @@
 </header>
 
 <main>
+    <!-- Table displaying current classes -->
     <table class="table table-bordered table-hover">
         <thead class="thead-dark">
             <tr>
@@ -62,6 +63,28 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Form to add a new class -->
+    <form method="POST" action="{{ url_for('admin.add_class') }}">
+        <div class="form-group">
+            <label for="anno">Anno:</label>
+            <input type="text" name="anno" id="anno" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="sezione">Sezione:</label>
+            <input type="text" name="sezione" id="sezione" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="anno_scolastico">Anno Scolastico:</label>
+            <select name="anno_scolastico" id="anno_scolastico" class="form-control" required>
+                {% for year in academic_years %}
+                    <option value="{{ year[0] }}">{{ year[0] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success">Aggiungi Classe</button>
+    </form>
+
     <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-secondary">Torna al Pannello di Controllo</a>
 </main>
 

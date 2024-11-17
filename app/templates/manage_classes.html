@@ -50,6 +50,16 @@
         </div>
         <button type="submit" class="btn btn-primary">Seleziona</button>
     </form>
+
+    <!-- Form to add a new academic year -->
+    <form method="POST" action="{{ url_for('admin.add_academic_year') }}">
+        <div class="form-group">
+            <label for="new_academic_year">Aggiungi Nuovo Anno Accademico:</label>
+            <input type="text" name="new_academic_year" id="new_academic_year" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Aggiungi</button>
+    </form>
+
     <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-secondary">Torna al Pannello di Controllo</a>
 </main>
 

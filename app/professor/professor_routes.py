@@ -225,6 +225,7 @@ def view_results(test_id):
         unique_academic_years = sorted({cls[0] for cls in classes})
         unique_years = sorted({cls[1] for cls in classes})
         unique_sections = sorted({cls[2] for cls in classes})
+        print(unique_academic_years, unique_years, unique_sections)
 
         # Pass the unique values to the template
         return render_template('results.html', 

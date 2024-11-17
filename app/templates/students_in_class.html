@@ -1,82 +1,46 @@
-<!-- templates/students_in_class.html -->
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studenti nella Classe</title>
+    <title>Dettaglio Studenti per {{ anno }} {{ sezione }} - {{ academic_year }}</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        header {
-            background-color: #343a40;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 4px solid #007bff;
-        }
-        main {
-            margin: 20px auto;
-            max-width: 800px;
-            text-align: center;
-        }
-        h1 {
-            margin-bottom: 20px;
-        }
-        table {
-            width: 100%;
-            margin: 20px 0;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border: 1px solid #dee2e6;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn {
-            margin-top: 10px;
-        }
-    </style>
 </head>
 <body>
 
 <header>
-    <h1>Studenti in {{ academic_year }} - {{ anno }} {{ sezione }}</h1>
+    <h1>Dettaglio Studenti per {{ anno }} {{ sezione }} - {{ academic_year }}</h1>
 </header>
 
 <main>
-    <h2>Studenti nella Classe</h2>
-    <table>
-        <tr>
-            <th>Username</th>
-            <th>Nome</th>
-            <th>Cognome</th>
-            <th>Azioni</th>
-        </tr>
-        {% for student in students %}
-        <tr>
-            <td>{{ student[0] }}</td>
-            <td>{{ student[1] }}</td>
-            <td>{{ student[2] }}</td>
-            <td>
-                <form method="POST" class="d-inline">
-                    <input type="hidden" name="remove_student_username" value="{{ student[0] }}">
-                    <button type="submit" name="remove_student" class="btn btn-danger">Rimuovi</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
+    <h3>Studenti nella Classe</h3>
+    <table class="table table-bordered">
+        <thead class="thead-dark">
+            <tr>
+                <th>Nome</th>
+                <th>Cognome</th>
+                <th>Username</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+                <tr>
+                    <td>{{ student[1] }}</td>
+                    <td>{{ student[2] }}</td>
+                    <td>{{ student[0] }}</td>
+                    <td>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="remove_student_username" value="{{ student[0] }}">
+                            <button type="submit" class="btn btn-danger" name="remove_student">Rimuovi Studente</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
     </table>
 
-    <h2>Aggiungi Studente alla Classe</h2>
+    <h3>Aggiungi Studente alla Classe</h3>
     <form method="POST">
         <div class="form-group">
             <label for="student_username">Seleziona Studente:</label>
@@ -86,10 +50,10 @@
                 {% endfor %}
             </select>
         </div>
-        <button type="submit" name="add_student" class="btn btn-primary">Aggiungi Studente</button>
+        <button type="submit" class="btn btn-primary" name="add_student">Aggiungi Studente</button>
     </form>
-    
-    <a href="{{ url_for('admin.class_detail', academic_year=academic_year) }}" class="btn btn-secondary">Torna alle Classi</a>
+
+    <a href="{{ url_for('admin.class_detail', academic_year=academic_year) }}" class="btn btn-secondary">Torna alla Gestione Classi</a>
 </main>
 
 </body>

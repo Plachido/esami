@@ -8,15 +8,20 @@ CREATE TABLE professore (
     password VARCHAR(255) NOT NULL
 );
 
+-- Tabella anno_scolastico
+CREATE TABLE anno_scolastico (
+    anno_scolastico VARCHAR(9) PRIMARY KEY
+);
+
 -- Tabella classe
 CREATE TABLE classe (
     anno_scolastico VARCHAR(9) NOT NULL,
     anno INT NOT NULL,
     sezione CHAR(1) NOT NULL,
-    PRIMARY KEY (anno_scolastico, anno, sezione)
+    PRIMARY KEY (anno_scolastico, anno, sezione),
+    FOREIGN KEY (anno_scolastico) REFERENCES anno_scolastico(anno_scolastico)
 );
 
--- Tabella insegna (relazione molti-a-molti tra professore e classe)
 CREATE TABLE insegna (
     professore_username VARCHAR(50) NOT NULL,
     anno_scolastico VARCHAR(9) NOT NULL,
@@ -26,7 +31,6 @@ CREATE TABLE insegna (
     FOREIGN KEY (anno_scolastico, anno, sezione) REFERENCES classe(anno_scolastico, anno, sezione),
     PRIMARY KEY (professore_username, anno_scolastico, anno, sezione)
 );
-
 -- Tabella alunno
 CREATE TABLE alunno (
     nome VARCHAR(50) NOT NULL,
@@ -36,9 +40,9 @@ CREATE TABLE alunno (
     anno_scolastico VARCHAR(9),
     anno INT,
     sezione CHAR(1),
+    FOREIGN KEY (anno_scolastico) REFERENCES anno_scolastico(anno_scolastico),
     FOREIGN KEY (anno_scolastico, anno, sezione) REFERENCES classe(anno_scolastico, anno, sezione)
 );
-
 -- Tabella test
 CREATE TABLE test (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -74,15 +78,16 @@ CREATE TABLE codice (
     test_id INT UNSIGNED NOT NULL,
     FOREIGN KEY (test_id) REFERENCES test(id)
 );
-
 -- Tabella test_alunno (relazione molti-a-molti tra alunno e codice di test)
 CREATE TABLE test_alunno (
     alunno_username VARCHAR(50) NOT NULL,
     codice_id INT UNSIGNED NOT NULL,
     voto DECIMAL(5, 2),
+    start_time datetime,
+    submission_date datetime,
     PRIMARY KEY (alunno_username, codice_id),
-    FOREIGN KEY (alunno_username) REFERENCES alunno(username),
-    FOREIGN KEY (codice_id) REFERENCES codice(id)
+    FOREIGN KEY (alunno_username) REFERENCES alunno(username) ON DELETE CASCADE,
+    FOREIGN KEY (codice_id) REFERENCES codice(id) ON DELETE CASCADE
 );
 
 -- Tabella risposta (traccia le risposte di ciascun alunno a ogni domanda del test)
@@ -91,11 +96,12 @@ CREATE TABLE risposta (
     codice_id INT UNSIGNED NOT NULL,
     domanda_id INT UNSIGNED NOT NULL,
     opzione_id INT UNSIGNED,
+    ordine int,
     PRIMARY KEY (alunno_username, codice_id, domanda_id),
-    FOREIGN KEY (alunno_username) REFERENCES alunno(username),
-    FOREIGN KEY (codice_id) REFERENCES codice(id),
-    FOREIGN KEY (domanda_id) REFERENCES domanda(id),
-    FOREIGN KEY (opzione_id) REFERENCES opzione(id)
+    FOREIGN KEY (alunno_username) REFERENCES alunno(username) ON DELETE CASCADE,
+    FOREIGN KEY (codice_id) REFERENCES codice(id) ON DELETE CASCADE,
+    FOREIGN KEY (domanda_id) REFERENCES domanda(id) ON DELETE CASCADE,
+    FOREIGN KEY (opzione_id) REFERENCES opzione(id) ON DELETE CASCADE
 );
 
 
